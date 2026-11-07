@@ -21,7 +21,7 @@ create table if not exists public.profiles (
 create table if not exists public.sellers (
   id uuid not null primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
-  store_name text not null,
+  store_name text not null, 
   description text,
   location text,
   status text not null check (status in ('pending', 'approved', 'rejected')) default 'pending',

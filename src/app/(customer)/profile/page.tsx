@@ -1,0 +1,142 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { updateProfileAction } from "@/modules/accounts/actions";
+
+export default function ProfilePage() {
+  const [profile, setProfile] = useState<{
+    id: string;
+    role: string;
+    full_name: string | null;
+    phone: string | null;
+    address: string | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+  });
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  async function loadProfile() {
+    const res = await fetch("/api/me");
+    if (!res.ok) return;
+    const data = await res.json();
+    setProfile(data);
+    setFormData({
+      full_name: data.full_name || "",
+      phone: data.phone || "",
+      address: data.address || "",
+    });
+  }
+
+  async function handleSubmit(formData: FormData) {
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    const result = await updateProfileAction(null, formData);
+
+    if (result.success) {
+      setMessage(result.message);
+      await loadProfile();
+    } else {
+      setError(result.message || "Update failed.");
+    }
+
+    setSaving(false);
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-muted-foreground">Loading profile...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <p className="text-muted-foreground">
+          Manage your account details
+        </p>
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Role
+          </span>
+          <span className="text-sm">{profile.role}</span>
+        </div>
+        <div className="grid gap-2 mb-4">
+          <div>
+            <label className="text-sm font-medium block">Email</label>
+            <p className="text-muted-foreground truncate">{profile.id}</p>
+          </div>
+        </div>
+      </div>
+
+      <form action={handleSubmit} className="space-y-4">
+        <h2 className="text-lg font-semibold">Edit details</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium">Full name</label>
+            <input
+              type="text"
+              name="full_name"
+              defaultValue={formData.full_name}
+              className="block w-full rounded-md border input bg-background text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              defaultValue={formData.phone}
+              className="block w-full rounded-md border input bg-background text-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Address</label>
+            <input
+              type="text"
+              name="address"
+              defaultValue={formData.address}
+              className="block w-full rounded-md border input bg-background text-foreground"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-70"
+          >
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
+          {message}
+        </div>
+      )}
+    </div>
+  );
+}
