@@ -21,11 +21,16 @@ export default async function DashboardPage() {
     Array<{ href: string; label: string }>
   > = {
     customer: [
+      { href: "/products", label: "Browse Catalog" },
       { href: "/apply", label: "Apply to be a seller" },
       { href: "/profile", label: "Profile" },
     ],
-    seller: [{ href: "/profile", label: "Profile" }],
+    seller: [
+      { href: "/seller/products", label: "My Products" },
+      { href: "/profile", label: "Profile" },
+    ],
     admin: [
+      { href: "/admin/categories", label: "Manage Categories" },
       { href: "/admin/sellers", label: "Seller Approvals" },
       { href: "/profile", label: "Profile" },
     ],
