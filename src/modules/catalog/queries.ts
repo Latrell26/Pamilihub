@@ -28,6 +28,9 @@ export type ProductWithSeller = {
 
 export type Product = Omit<ProductWithSeller, "sellers">;
 
+const normalizeSeller = (value: unknown) =>
+  Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+
 /** List all categories (public read). */
 export async function getCategories(): Promise<Category[] | null> {
   const supabase = createClient();
@@ -77,7 +80,7 @@ export async function getProducts({
   if (error) return null;
   return (data ?? []).map((item: any) => ({
     ...item,
-    sellers: item.sellers?.[0] ?? null,
+    sellers: normalizeSeller(item.sellers),
   })) as ProductWithSeller[];
 }
 
@@ -103,7 +106,7 @@ export async function getProductDetail(
   if (!data) return null;
   return {
     ...data,
-    sellers: data.sellers?.[0] ?? null,
+    sellers: normalizeSeller(data.sellers),
   } as ProductWithSeller;
 }
 

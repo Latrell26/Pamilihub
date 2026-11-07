@@ -25,7 +25,7 @@ export const productUpdateSchema = z.object({
   id: z.string().uuid("Invalid product ID"),
   category_id: z.string().uuid("Invalid category").optional(),
   name: z.string().min(1, "Product name is required").trim().optional(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   price: z.coerce.number().min(0, "Price must be at least 0").optional(),
   stock: z.coerce.number().int().min(0, "Stock must be at least 0").optional(),
 });

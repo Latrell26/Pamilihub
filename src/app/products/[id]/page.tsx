@@ -73,9 +73,6 @@ export default async function ProductDetailPage({
               {product.sellers.location}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">
-            Status:{product.sellers?.status ? " " + product.sellers.status : "—"}
-          </p>
         </div>
 
         {product.stock > 0 ? (

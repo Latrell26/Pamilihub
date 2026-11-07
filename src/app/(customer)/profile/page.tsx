@@ -168,7 +168,8 @@ export default function ProfilePage() {
       </form>
 
       {/* Seller account card */}
-      <div className="rounded-lg border bg-card p-4">
+      {profile.role !== "admin" && (
+        <div className="rounded-lg border bg-card p-4">
         <h2 className="text-lg font-semibold mb-2">Seller account</h2>
         {sellerStatus ? (
           sellerStatus.status === "pending" ? (
@@ -237,6 +238,7 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      )}
 
       {error && (
         <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">

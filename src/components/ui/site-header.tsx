@@ -85,7 +85,7 @@ export default function SiteHeader({
 
       {/* Mobile navigation row — visible below the header on phones */}
       {links.length > 0 && (
-        <div className="hidden md:flex flex-col items-start gap-2 py-2 px-4 md:hidden border-t border-border">
+        <div className="flex md:hidden flex-col items-start gap-2 py-2 px-4 border-t border-border">
           {links.map((l) => (
             <Link
               key={l.href}

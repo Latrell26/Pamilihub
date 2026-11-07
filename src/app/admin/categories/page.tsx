@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getCategories } from "@/modules/catalog/queries";
 import {
   createCategoryAction,
@@ -31,6 +31,10 @@ export default function AdminCategoriesPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   async function handleCreate(formData: FormData) {
     setMessage("");

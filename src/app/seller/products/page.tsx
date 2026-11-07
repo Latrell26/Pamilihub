@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSellerProducts, getCategories } from "@/modules/catalog/queries";
 import {
   createProductAction,
@@ -23,7 +23,7 @@ type Product = {
 
 export default function SellerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
@@ -102,6 +102,10 @@ export default function SellerProductsPage() {
       setError(result.message || "Failed to delete product.");
     }
   }
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   if (loading) {
     return (
@@ -241,6 +245,7 @@ export default function SellerProductsPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b">
+                <th className="text-left p-2">Image</th>
                 <th className="text-left p-2">Name</th>
                 <th className="text-right p-2">Price</th>
                 <th className="text-right p-2">Stock</th>
@@ -253,6 +258,19 @@ export default function SellerProductsPage() {
                 if (isEditing) {
                   return (
                     <tr key={p.id} className="border-b">
+                      <td className="p-2">
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className="w-16 h-16 rounded object-cover border"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">No image</span>
+                          </div>
+                        )}
+                      </td>
                       <td className="p-2">
                         <form action={handleUpdate} className="flex flex-col sm:flex-row gap-2">
                           <input type="hidden" name="id" value={p.id} />
@@ -274,6 +292,12 @@ export default function SellerProductsPage() {
                             defaultValue={editName}
                             required
                             className="rounded-md border input bg-background text-foreground text-sm flex-1"
+                          />
+                          <textarea
+                            name="description"
+                            defaultValue={editDesc}
+                            rows={2}
+                            className="rounded-md border input bg-background text-foreground text-sm flex-1 mb-2 sm:mb-0"
                           />
                           <input
                             name="price"
@@ -327,15 +351,53 @@ export default function SellerProductsPage() {
                           </button>
                         </form>
                       </td>
-                      <td className="p-2"></td>
-                      <td className="p-2"></td>
-                      <td className="p-2"></td>
+                      <td className="p-2 text-right">₱{Number(p.price).toFixed(2)}</td>
+                      <td className="p-2 text-right">
+                        {p.stock === 0 ? (
+                          <span className="text-destructive">0</span>
+                        ) : (
+                          p.stock
+                        )}
+                      </td>
+                      <td className="p-2 text-right space-x-2">
+                        <button
+                          onClick={() => startEdit(p)}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <form action={handleDelete} className="inline">
+                          <input type="hidden" name="id" value={p.id} />
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-destructive hover:underline"
+                            onClick={(e) => {
+                              if (!confirm("Delete this product?")) e.preventDefault();
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </form>
+                      </td>
                     </tr>
                   );
                 }
 
                 return (
                   <tr key={p.id} className="border-b">
+                    <td className="p-2">
+                      {p.image_url ? (
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          className="w-16 h-16 rounded object-cover border"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
+                          <span className="text-xs text-muted-foreground">No image</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="p-2">{p.name}</td>
                     <td className="p-2 text-right">₱{Number(p.price).toFixed(2)}</td>
                     <td className="p-2 text-right">
