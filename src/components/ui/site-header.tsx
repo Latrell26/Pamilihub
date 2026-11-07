@@ -1,22 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { logoutAction } from "@/modules/accounts/actions";
-import { getHeaderUser } from "@/lib/auth/header-user";
+import { signoutAction } from "@/modules/accounts/actions";
+import type { HeaderUser } from "@/lib/auth/header-user";
 
-export type HeaderUser = {
-  id: string;
-  email: string | null;
-  role: string;
-};
-
-export default async function SiteHeader({
+export default function SiteHeader({
   user,
 }: Readonly<{
   user: HeaderUser | null;
 }>) {
-  async function handleSignout(_formData: FormData) {
-    await logoutAction();
-  }
-
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
     customer: [
       { href: "/products", label: "Catalog" },
@@ -77,7 +69,7 @@ export default async function SiteHeader({
               </Link>
             </>
           ) : (
-            <form action={handleSignout} className="ml-2">
+            <form action={signoutAction} className="ml-2">
               <button
                 type="submit"
                 className="text-sm font-medium text-destructive hover:underline"

@@ -111,6 +111,16 @@ export async function logoutAction(): Promise<ActionState> {
   redirect("/login");
 }
 
+/**
+ * Sign-out server action for use in <form action={...}>.
+ * Returns void so it's assignable to a form action.
+ */
+export async function signoutAction(): Promise<void> {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
+
 /* ------------------------------------------------------------------ */
 /* Profile                                                            */
 /* ------------------------------------------------------------------ */
