@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { updateProfileAction } from "@/modules/accounts/actions";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<{
     id: string;
     role: string;
@@ -11,7 +14,7 @@ export default function ProfilePage() {
     phone: string | null;
     address: string | null;
   } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -22,13 +25,17 @@ export default function ProfilePage() {
     address: "",
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     const res = await fetch("/api/me");
-    if (!res.ok) return;
+    if (res.status === 401) {
+      router.push("/login");
+      setLoaded(true);
+      return;
+    }
+    if (!res.ok) {
+      setLoaded(true);
+      return;
+    }
     const data = await res.json();
     setProfile(data);
     setFormData({
@@ -36,7 +43,12 @@ export default function ProfilePage() {
       phone: data.phone || "",
       address: data.address || "",
     });
-  }
+    setLoaded(true);
+  }, [router]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -55,10 +67,23 @@ export default function ProfilePage() {
     setSaving(false);
   }
 
-  if (!profile) {
+  if (!loaded) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-muted-foreground">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-muted-foreground">
+          Not signed in.{" "}
+          <Link href="/login" className="font-semibold underline">
+            Sign in
+          </Link>
+        </div>
       </div>
     );
   }
@@ -81,7 +106,7 @@ export default function ProfilePage() {
         </div>
         <div className="grid gap-2 mb-4">
           <div>
-            <label className="text-sm font-medium block">Email</label>
+            <label className="text-sm font-medium block">ID</label>
             <p className="text-muted-foreground truncate">{profile.id}</p>
           </div>
         </div>

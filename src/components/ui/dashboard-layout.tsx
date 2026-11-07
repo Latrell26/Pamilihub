@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { logoutAction } from "@/modules/accounts/actions";
 
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  async function handleSignout(_formData: FormData) {
+    await logoutAction();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border bg-card px-4 py-3 flex items-center justify-between sticky top-0 z-10">
@@ -23,11 +28,7 @@ export default function DashboardLayout({
           >
             Profile
           </a>
-          <form
-            action="/api/auth/signout"
-            method="POST"
-            className="ml-2"
-          >
+          <form action={handleSignout} className="ml-2">
             <button
               type="submit"
               className="text-sm font-medium text-destructive hover:underline"

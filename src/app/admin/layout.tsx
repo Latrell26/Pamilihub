@@ -1,12 +1,11 @@
 import { requireAdmin } from "@/lib/auth/roles";
-import { redirect } from "next/navigation";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   // Server-side role guard: only admins can reach these pages
-  requireAdmin();
+  await requireAdmin();
   return <>{children}</>;
 }

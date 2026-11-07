@@ -1,12 +1,11 @@
 import { requireRole } from "@/lib/auth/roles";
-import { redirect } from "next/navigation";
 
-export default function SellerLayout({
+export default async function SellerLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   // Server-side role guard: only approved sellers can reach these pages
-  requireRole("seller");
+  await requireRole("seller");
   return <>{children}</>;
 }

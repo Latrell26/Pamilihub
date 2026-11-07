@@ -21,19 +21,13 @@ export default async function DashboardPage() {
     Array<{ href: string; label: string }>
   > = {
     customer: [
-      { href: "/(customer)/products", label: "Browse Catalog" },
-      { href: "/(customer)/cart", label: "Cart" },
-      { href: "/(customer)/orders", label: "My Orders" },
+      { href: "/apply", label: "Apply to be a seller" },
+      { href: "/profile", label: "Profile" },
     ],
-    seller: [
-      { href: "/seller/apply", label: "Seller Application" },
-      { href: "/seller/products", label: "My Products" },
-      { href: "/seller/orders", label: "My Orders" },
-    ],
+    seller: [{ href: "/profile", label: "Profile" }],
     admin: [
       { href: "/admin/sellers", label: "Seller Approvals" },
-      { href: "/admin/users", label: "Users" },
-      { href: "/admin/dashboard", label: "Dashboard" },
+      { href: "/profile", label: "Profile" },
     ],
   };
 
