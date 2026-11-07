@@ -14,10 +14,7 @@ export default function SiteHeader({
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
-    customer: [
-      { href: "/products", label: "Catalog" },
-      { href: "/apply", label: "Apply to sell" },
-    ],
+    customer: [{ href: "/products", label: "Catalog" }],
     seller: [{ href: "/seller/products", label: "My Products" }],
     admin: [
       { href: "/admin/categories", label: "Categories" },

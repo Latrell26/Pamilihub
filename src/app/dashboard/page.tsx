@@ -22,7 +22,6 @@ export default async function DashboardPage() {
   > = {
     customer: [
       { href: "/products", label: "Browse Catalog" },
-      { href: "/apply", label: "Apply to be a seller" },
       { href: "/profile", label: "Profile" },
     ],
     seller: [

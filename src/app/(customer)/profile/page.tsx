@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateProfileAction } from "@/modules/accounts/actions";
+import { getSellerStatus } from "@/modules/accounts/queries";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,6 +14,11 @@ export default function ProfilePage() {
     full_name: string | null;
     phone: string | null;
     address: string | null;
+  } | null>(null);
+  const [sellerStatus, setSellerStatus] = useState<{
+    id: string;
+    store_name: string | null;
+    status: string | null;
   } | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,6 +49,15 @@ export default function ProfilePage() {
       phone: data.phone || "",
       address: data.address || "",
     });
+
+    // Load seller status
+    try {
+      const seller = await getSellerStatus();
+      setSellerStatus(seller);
+    } catch {
+      setSellerStatus(null);
+    }
+
     setLoaded(true);
   }, [router]);
 
@@ -151,6 +166,77 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Seller account card */}
+      <div className="rounded-lg border bg-card p-4">
+        <h2 className="text-lg font-semibold mb-2">Seller account</h2>
+        {sellerStatus ? (
+          sellerStatus.status === "pending" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Your seller application is under review.
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                Pending
+              </span>
+              <p className="text-sm text-muted-foreground">
+                An admin will review your application. You will be notified once
+                approved.
+              </p>
+            </div>
+          ) : sellerStatus.status === "approved" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                You&apos;re an approved seller. You can now list products.
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                Approved
+              </span>
+              <Link
+                href="/seller/products"
+                className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
+              >
+                Manage products
+              </Link>
+            </div>
+          ) : sellerStatus.status === "rejected" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Your seller application was not approved.
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                Rejected
+              </span>
+              <p className="text-sm text-muted-foreground">
+                You may reapply if you&apos;d like to try again.
+              </p>
+              <Link
+                href="/apply"
+                className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
+              >
+                Reapply
+              </Link>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              Unknown status: {sellerStatus.status}
+            </div>
+          )
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Want to sell your products on Pamilihub? Apply to become a
+              seller.
+            </p>
+            <Link
+              href="/apply"
+              className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
+            >
+              Apply to sell
+            </Link>
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">

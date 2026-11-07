@@ -7,7 +7,6 @@ const ROLE_LINKS: Record<string, RoleLinks> = {
   customer: [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/products", label: "Catalog" },
-    { href: "/apply", label: "Apply to sell" },
   ],
   seller: [
     { href: "/dashboard", label: "Dashboard" },
