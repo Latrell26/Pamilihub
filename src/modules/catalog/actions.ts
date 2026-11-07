@@ -121,7 +121,7 @@ async function getCurrentSellerId(supabase: ReturnType<typeof createClient>) {
 
   const { data: seller } = await supabase
     .from("sellers")
-    .select("id, status")
+    .select("id, profile_id, status")
     .eq("profile_id", user.id)
     .single();
 
@@ -192,7 +192,7 @@ export async function createProductAction(
   let imageUrl: string | null = null;
 
   if (imageFile && imageFile.size > 0) {
-    const uploaded = await uploadProductImage(supabase, seller.id, imageFile);
+    const uploaded = await uploadProductImage(supabase, seller.profile_id, imageFile);
     if (uploaded.error) {
       return { success: false, message: uploaded.error };
     }
@@ -276,7 +276,7 @@ export async function updateProductAction(
         // ignore delete errors
       }
     }
-    const uploaded = await uploadProductImage(supabase, seller.id, imageFile);
+    const uploaded = await uploadProductImage(supabase, seller.profile_id, imageFile);
     if (uploaded.error) {
       return { success: false, message: uploaded.error };
     }

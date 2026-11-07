@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getSellerProducts } from "@/modules/catalog/queries";
+import { getSellerProducts, getCategories } from "@/modules/catalog/queries";
 import {
   createProductAction,
   updateProductAction,
@@ -28,6 +28,8 @@ export default function SellerProductsPage() {
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
   // Create form state
   const [newCat, setNewCat] = useState("");
@@ -46,8 +48,12 @@ export default function SellerProductsPage() {
   async function loadProducts() {
     setLoading(true);
     try {
-      const data = await getSellerProducts();
-      setProducts(data ?? []);
+      const [productsData, categoriesData] = await Promise.all([
+        getSellerProducts(),
+        getCategories(),
+      ]);
+      setProducts(productsData ?? []);
+      setCategories(categoriesData ?? []);
     } finally {
       setLoading(false);
     }
@@ -78,6 +84,7 @@ export default function SellerProductsPage() {
     if (result.success) {
       setMessage(result.message);
       setEditingId(null);
+      setRemoveImage(false);
       await loadProducts();
     } else {
       setError(result.message || "Failed to update product.");
@@ -111,6 +118,7 @@ export default function SellerProductsPage() {
     setEditDesc(p.description ?? "");
     setEditPrice(String(p.price));
     setEditStock(String(p.stock));
+    setRemoveImage(false);
   };
 
   return (
@@ -148,14 +156,19 @@ export default function SellerProductsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium">Category</label>
-                <input
-                  type="text"
+                <select
                   name="category_id"
                   defaultValue={newCat}
                   required
-                  placeholder="Category ID"
                   className="block w-full rounded-md border input bg-background text-foreground"
-                />
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium">Product name</label>
@@ -243,11 +256,19 @@ export default function SellerProductsPage() {
                       <td className="p-2">
                         <form action={handleUpdate} className="flex flex-col sm:flex-row gap-2">
                           <input type="hidden" name="id" value={p.id} />
-                          <input
+                          <select
                             name="category_id"
                             defaultValue={editCat}
+                            required
                             className="rounded-md border input bg-background text-foreground text-sm"
-                          />
+                          >
+                            <option value="">Select a category</option>
+                            {categories.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
                           <input
                             name="name"
                             defaultValue={editName}
@@ -280,16 +301,16 @@ export default function SellerProductsPage() {
                           <input
                             type="hidden"
                             name="remove_image"
-                            value="false"
+                            value={removeImage ? "true" : "false"}
                           />
                           <button
                             type="button"
-                            onClick={() => {
-                              // toggle remove image - simplified: we don't have a toggle UI here
-                            }}
-                            className="text-xs text-destructive hover:underline ml-2"
+                            onClick={() => setRemoveImage((prev) => !prev)}
+                            className={`text-xs font-medium hover:underline ml-2 ${
+                              removeImage ? "text-destructive" : "text-destructive/60"
+                            }`}
                           >
-                            Remove image
+                            {removeImage ? "Keep image" : "Remove image"}
                           </button>
                           <button
                             type="submit"
