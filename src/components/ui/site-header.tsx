@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signoutAction } from "@/modules/accounts/actions";
 import type { HeaderUser } from "@/lib/auth/header-user";
 
@@ -9,6 +10,9 @@ export default function SiteHeader({
 }: Readonly<{
   user: HeaderUser | null;
 }>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
     customer: [
       { href: "/products", label: "Catalog" },
@@ -53,7 +57,7 @@ export default function SiteHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          {!user ? (
+          {!isAuthPage && !user ? (
             <>
               <Link
                 href="/login"
@@ -68,7 +72,8 @@ export default function SiteHeader({
                 Register
               </Link>
             </>
-          ) : (
+          ) : null}
+          {user ? (
             <form action={signoutAction} className="ml-2">
               <button
                 type="submit"
@@ -77,9 +82,32 @@ export default function SiteHeader({
                 Sign out
               </button>
             </form>
-          )}
+          ) : null}
         </div>
       </div>
+
+      {/* Mobile navigation row — visible below the header on phones */}
+      {links.length > 0 && (
+        <div className="hidden md:flex flex-col items-start gap-2 py-2 px-4 md:hidden border-t border-border">
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              {l.label}
+            </Link>
+          ))}
+          {user && (
+            <Link
+              href="/profile"
+              className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              Profile
+            </Link>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

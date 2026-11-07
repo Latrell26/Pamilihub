@@ -6,6 +6,7 @@ export type HeaderUser = {
   id: string;
   email: string | null;
   role: string;
+  full_name: string | null;
 };
 
 export async function getHeaderUser(): Promise<HeaderUser | null> {
@@ -17,7 +18,7 @@ export async function getHeaderUser(): Promise<HeaderUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, full_name")
     .eq("id", user.id)
     .single();
 
@@ -25,5 +26,6 @@ export async function getHeaderUser(): Promise<HeaderUser | null> {
     id: user.id,
     email: user.email ?? null,
     role: (profile?.role as string | null) ?? "customer",
+    full_name: profile?.full_name ?? null,
   };
 }
