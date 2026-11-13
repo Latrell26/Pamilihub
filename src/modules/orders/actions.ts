@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/roles";
 import { checkoutSchema, type CheckoutInput } from "./schemas";
 
@@ -37,6 +38,7 @@ export async function checkoutAction(
   formData: FormData
 ): Promise<ActionState> {
   const supabase = createClient();
+  const admin = createAdminClient();
   const user = await getCurrentUser(supabase);
   if (!user) {
     return { success: false, message: "Not authenticated." };
@@ -124,15 +126,18 @@ export async function checkoutAction(
     product_id: i.productId,
     quantity: i.quantity,
   }));
-  const { error: deductError } = await supabase.rpc("deduct_stock", {
+  const { error: deductError } = await admin.rpc("deduct_stock", {
     p_order_items: deductItems,
   });
   if (deductError) {
+    console.error("checkout: deduct_stock failed:", deductError);
     return {
       success: false,
       message: deductError.message.includes("Insufficient stock")
         ? deductError.message
-        : "Stock check failed. Please try again.",
+        : deductError.message.includes("Product not found")
+          ? deductError.message
+          : "Stock check failed. Please try again.",
     };
   }
 
@@ -165,7 +170,7 @@ export async function checkoutAction(
 
     if (orderError) {
       // Rollback: restore stock for all items already deducted
-      await supabase.rpc("restore_stock", { p_order_items: deductItems });
+      await admin.rpc("restore_stock", { p_order_items: deductItems });
       return { success: false, message: "Failed to create order." };
     }
 
@@ -183,17 +188,12 @@ export async function checkoutAction(
       .insert(orderItems);
     if (itemsError) {
       // Rollback: restore stock and delete the order
-      await supabase.rpc("restore_stock", { p_order_items: deductItems });
+      await admin.rpc("restore_stock", { p_order_items: deductItems });
       await supabase.from("orders").delete().eq("id", order.id);
       return { success: false, message: "Failed to create order items." };
     }
 
-    // Create a payments record
-    await supabase.from("payments").insert({
-      order_id: order.id,
-      method: parsed.data.paymentMethod,
-      status: "pending",
-    });
+    // Payments record is written by the MockPay route (Phase 5), not here.
   }
 
   return {
