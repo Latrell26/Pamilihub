@@ -22,8 +22,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body>
-        <SiteHeader user={user} />
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <SiteHeader user={user} />
+          {children}
+        </CartProvider>
       </body>
     </html>
   );

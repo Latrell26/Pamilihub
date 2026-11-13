@@ -38,7 +38,9 @@ export function AddToCartButton({
 
   return (
     <button
-      onClick={() => {
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
         addItem({ productId, name, price, stock, sellerId, sellerName, imageUrl });
         setAdded(true);
         setTimeout(() => setAdded(false), 1500);

@@ -1,16 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-context";
-import { checkoutAction } from "@/modules/orders/actions";
 
 export default function CartPage() {
-  const { items, itemCount, subtotal, removeItem, updateQuantity, clear, isLoaded } =
+  const { items, itemCount, subtotal, removeItem, updateQuantity, isLoaded } =
     useCart();
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
   // Group items by seller to show per-seller delivery fee
   const itemsBySeller = new Map<string, { name: string; items: typeof items }>();
@@ -51,20 +46,6 @@ export default function CartPage() {
     );
   }
 
-  async function handleCheckout(formData: FormData) {
-    setLoading(true);
-    setMessage("");
-    setError("");
-    const result = await checkoutAction(null, formData);
-    if (result.success) {
-      setMessage(result.message);
-      clear();
-    } else {
-      setError(result.message || "Checkout failed.");
-    }
-    setLoading(false);
-  }
-
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       <div>
@@ -73,17 +54,6 @@ export default function CartPage() {
           {itemCount} item{itemCount !== 1 ? "s" : ""}
         </p>
       </div>
-
-      {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
-          {message}
-        </div>
-      )}
 
       {/* Cart items */}
       <div className="rounded-lg border bg-card p-4">
@@ -194,25 +164,12 @@ export default function CartPage() {
       </div>
 
       {/* Checkout button */}
-      <form action={handleCheckout} className="space-y-4">
-        <input
-          type="hidden"
-          name="cart"
-          value={JSON.stringify(
-            items.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-            }))
-          )}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md border border-transparent bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-70"
-        >
-          {loading ? "Placing order..." : "Proceed to checkout"}
-        </button>
-      </form>
+      <Link
+        href="/checkout"
+        className="block w-full rounded-md bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+      >
+        Proceed to checkout
+      </Link>
     </div>
   );
 }

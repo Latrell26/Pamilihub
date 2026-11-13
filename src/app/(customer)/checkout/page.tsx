@@ -6,11 +6,14 @@ import { useCart } from "@/lib/cart/cart-context";
 import { checkoutAction } from "@/modules/orders/actions";
 
 export default function CheckoutPage() {
-  const { items, subtotal, isLoaded } = useCart();
+  const { items, subtotal, isLoaded, clear: clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [paymentMethod, setPaymentMethod] = useState<"mockpay" | "cod">("mockpay");
+
+  const getFieldError = (name: string) => fieldErrors[name]?.[0];
 
   // Group items by seller for per-seller delivery fee
   const itemsBySeller = new Map<string, { name: string; items: typeof items }>();
@@ -58,10 +61,12 @@ export default function CheckoutPage() {
     const result = await checkoutAction(null, formData);
     if (result.success) {
       setMessage(result.message);
+      clearCart();
       // Redirect to order success / orders page
       window.location.href = "/orders";
     } else {
       setError(result.message || "Checkout failed.");
+      setFieldErrors(result.errors ?? {});
     }
     setLoading(false);
   }
@@ -110,9 +115,14 @@ export default function CheckoutPage() {
                 name="delivery_name"
                 defaultValue=""
                 required
-                className="w-full rounded-md border input bg-background text-foreground"
+                className={`w-full rounded-md border input bg-background text-foreground ${
+                  getFieldError("deliveryName") ? "border-destructive" : ""
+                }`}
                 placeholder="Juan Dela Cruz"
               />
+              {getFieldError("deliveryName") && (
+                <p className="mt-1 text-sm text-destructive">{getFieldError("deliveryName")}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -123,9 +133,14 @@ export default function CheckoutPage() {
                 type="tel"
                 defaultValue=""
                 required
-                className="w-full rounded-md border input bg-background text-foreground"
+                className={`w-full rounded-md border input bg-background text-foreground ${
+                  getFieldError("deliveryPhone") ? "border-destructive" : ""
+                }`}
                 placeholder="0912 345 6789"
               />
+              {getFieldError("deliveryPhone") && (
+                <p className="mt-1 text-sm text-destructive">{getFieldError("deliveryPhone")}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">
@@ -135,9 +150,14 @@ export default function CheckoutPage() {
                 name="delivery_address"
                 defaultValue=""
                 required
-                className="w-full rounded-md border input bg-background text-foreground"
+                className={`w-full rounded-md border input bg-background text-foreground ${
+                  getFieldError("deliveryAddress") ? "border-destructive" : ""
+                }`}
                 placeholder="123 Brgy. San Rafael, San Pablo City, Laguna"
               />
+              {getFieldError("deliveryAddress") && (
+                <p className="mt-1 text-sm text-destructive">{getFieldError("deliveryAddress")}</p>
+              )}
             </div>
           </div>
         </div>

@@ -1,3 +1,5 @@
+Never run Stop-Process on all node processes. Only kill the process listening on the specific dev server port.
+
 # AGENTS.md — (SP) Pamilihub
 
 Entry point for every AI agent working on this repository. Read this file first, then the files it links to.
