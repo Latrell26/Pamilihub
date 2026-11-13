@@ -17,7 +17,10 @@ export default function SiteHeader({
 
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
     customer: [{ href: "/products", label: "Catalog" }],
-    seller: [{ href: "/seller/products", label: "My Products" }],
+    seller: [
+      { href: "/seller/products", label: "My Products" },
+      { href: "/seller/orders", label: "Orders" },
+    ],
     admin: [
       { href: "/admin/categories", label: "Categories" },
       { href: "/admin/sellers", label: "Seller Approvals" },

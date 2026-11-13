@@ -24,3 +24,18 @@ export const mockpaySchema = z.object({
 });
 
 export type MockPayInput = z.infer<typeof mockpaySchema>;
+
+/** Order status update request validation (seller/admin actions). */
+export const orderStatusUpdateSchema = z.object({
+  order_id: z.string().uuid("Invalid order ID"),
+  new_status: z.enum([
+    "accepted",
+    "rejected",
+    "preparing",
+    "delivering",
+    "completed",
+    "cancelled",
+  ]),
+});
+
+export type OrderStatusUpdateInput = z.infer<typeof orderStatusUpdateSchema>;

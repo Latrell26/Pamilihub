@@ -3,7 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/roles";
+import { requireRole } from "@/lib/auth/roles";
+import { revalidatePath } from "next/cache";
 import { checkoutSchema, type CheckoutInput } from "./schemas";
+import { orderStatusUpdateSchema, type OrderStatusUpdateInput } from "./schemas";
 
 type ActionState = {
   success: boolean;
@@ -200,5 +203,48 @@ export async function checkoutAction(
     success: true,
     message: "Order(s) placed successfully.",
     orderIds,
+  };
+}
+
+/** Seller/admin: update an order's status (accept, reject, prepare, deliver, complete, cancel). */
+export async function updateOrderStatusAction(
+  _prevState: ActionState | null,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = createClient();
+  const user = await getCurrentUser(supabase);
+  if (!user) {
+    return { success: false, message: "Not authenticated." };
+  }
+  if (user.role !== "seller" && user.role !== "admin") {
+    return { success: false, message: "Only sellers or admins can update order status." };
+  }
+
+  const parsed = orderStatusUpdateSchema.safeParse({
+    order_id: formData.get("order_id"),
+    new_status: formData.get("new_status"),
+  });
+
+  if (!parsed.success) {
+    return { success: false, message: "Validation failed." };
+  }
+
+  const { order_id, new_status } = parsed.data;
+
+  const { error } = await supabase.rpc("update_order_status", {
+    p_order_id: order_id,
+    p_new_status: new_status,
+  });
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  revalidatePath("/seller/orders");
+  revalidatePath("/orders");
+
+  return {
+    success: true,
+    message: `Order status updated to ${new_status}.`,
   };
 }
