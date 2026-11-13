@@ -15,3 +15,12 @@ export const checkoutSchema = z.object({
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+
+/** MockPay payment request validation. */
+export const mockpaySchema = z.object({
+  order_id: z.string().uuid("Invalid order ID"),
+  amount: z.number().positive("Amount must be positive"),
+  result: z.enum(["approve", "cancel"]),
+});
+
+export type MockPayInput = z.infer<typeof mockpaySchema>;
