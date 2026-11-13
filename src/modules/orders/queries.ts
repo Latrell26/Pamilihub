@@ -54,7 +54,10 @@ export async function getCustomerOrders(): Promise<OrderWithItems[] | null> {
     .order("created_at", { ascending: false });
 
   if (error) return null;
-  return (data ?? []) as unknown as OrderWithItems[];
+  return (data ?? []).map((o: any) => ({
+    ...o,
+    sellerStoreName: o.sellers?.store_name ?? null,
+  })) as unknown as OrderWithItems[];
 }
 
 /** List orders for the current seller's store (RLS: seller reads own store). */
@@ -87,5 +90,8 @@ export async function getSellerOrders(): Promise<OrderWithItems[] | null> {
     .order("created_at", { ascending: false });
 
   if (error) return null;
-  return (data ?? []) as unknown as OrderWithItems[];
+  return (data ?? []).map((o: any) => ({
+    ...o,
+    sellerStoreName: o.sellers?.store_name ?? null,
+  })) as unknown as OrderWithItems[];
 }
