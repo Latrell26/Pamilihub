@@ -60,6 +60,39 @@ export async function getCustomerOrders(): Promise<OrderWithItems[] | null> {
   })) as unknown as OrderWithItems[];
 }
 
+/** Get a single order with items (RLS: customer reads own, seller reads own store,
+ *  admin reads all). */
+export async function getOrderById(
+  orderId: string
+): Promise<OrderWithItems | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `
+      id, customer_id, seller_id,
+      sellers ( store_name ),
+      delivery_name, delivery_phone,
+      delivery_address, delivery_fee, total, payment_method,
+      payment_status, order_status, created_at, updated_at,
+      order_items ( id, product_id, quantity, unit_price,
+        products ( name, image_url ) )
+      `
+    )
+    .eq("id", orderId)
+    .single();
+
+  if (error || !data) return null;
+  const o = data as any;
+  return {
+    ...o,
+    sellerStoreName: o.sellers?.store_name ?? null,
+  } as unknown as OrderWithItems;
+}
+
 /** List orders for the current seller's store (RLS: seller reads own store). */
 export async function getSellerOrders(): Promise<OrderWithItems[] | null> {
   const supabase = createClient();

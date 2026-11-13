@@ -55,6 +55,7 @@ export default async function OrdersPage() {
                 <th className="text-right p-2">Payment</th>
                 <th className="text-right p-2">Status</th>
                 <th className="text-right p-2">Date</th>
+                <th className="text-right p-2">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -97,6 +98,19 @@ export default async function OrdersPage() {
                   </td>
                   <td className="p-2 text-right text-muted-foreground">
                     {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="p-2 text-right">
+                    {order.payment_method === "mockpay" &&
+                    order.payment_status === "pending" ? (
+                      <Link
+                        href={`/orders/${order.id}/pay`}
+                        className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
+                      >
+                        Pay now
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
