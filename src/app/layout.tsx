@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/ui/site-header";
+import { CartProvider } from "@/lib/cart/cart-context";
 import { getHeaderUser } from "@/lib/auth/header-user";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -22,7 +23,7 @@ export default async function RootLayout({
     <html lang="en" className={inter.className}>
       <body>
         <SiteHeader user={user} />
-        {children}
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

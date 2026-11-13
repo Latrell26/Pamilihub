@@ -1,5 +1,6 @@
 import { getCategories, getProducts } from "@/modules/catalog/queries";
 import Link from "next/link";
+import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 
 export default async function CatalogPage({
   searchParams,
@@ -96,6 +97,15 @@ export default async function CatalogPage({
                 <div className="mt-2 text-xs text-muted-foreground">
                   {product.sellers?.store_name ?? "Unknown seller"}
                 </div>
+                <AddToCartButton
+                  productId={product.id}
+                  name={product.name}
+                  price={product.price}
+                  stock={product.stock}
+                  sellerId={product.seller_id}
+                  sellerName={product.sellers?.store_name ?? "Unknown seller"}
+                  imageUrl={product.image_url}
+                />
               </div>
             </div>
           </Link>
