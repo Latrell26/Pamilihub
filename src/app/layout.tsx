@@ -1,13 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/ui/site-header";
 import MobileBottomNav from "@/components/ui/mobile-bottom-nav";
 import FloatingCartBar from "@/components/ui/floating-cart-bar";
 import { CartProvider } from "@/lib/cart/cart-context";
 import { getHeaderUser } from "@/lib/auth/header-user";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const viewport: Viewport = {
   themeColor: "#e11d48",
@@ -36,8 +33,8 @@ export default async function RootLayout({
   const user = await getHeaderUser();
 
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen flex flex-col bg-background text-foreground">
+    <html lang="en">
+      <body className="min-h-screen flex flex-col bg-background text-foreground antialiased font-sans">
         <CartProvider>
           <SiteHeader user={user} />
           {/* Main Content with bottom padding on mobile so it doesn't get covered by the bottom nav */}
