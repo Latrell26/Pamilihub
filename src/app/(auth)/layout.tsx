@@ -6,7 +6,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-b from-muted/20 via-background to-background p-4 sm:p-6">
+    <div className="-mb-20 md:-mb-8 min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-muted/20 via-background to-background p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-1">
           <Link href="/" className="inline-flex items-center gap-2 font-bold text-lg text-foreground hover:opacity-90 transition-opacity">

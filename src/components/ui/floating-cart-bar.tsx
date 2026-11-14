@@ -8,9 +8,17 @@ import { ShoppingBag, ArrowRight } from "lucide-react";
 export default function FloatingCartBar() {
   const pathname = usePathname();
   const { itemCount, subtotal } = useCart();
+  const isProductDetailPage = pathname.startsWith("/products/") && pathname !== "/products";
 
-  // Don't show floating cart if empty, or already on cart/checkout pages
-  if (itemCount === 0 || pathname === "/cart" || pathname === "/checkout") {
+  // Don't show floating cart if empty, or on cart/checkout/auth/product-detail pages
+  if (
+    itemCount === 0 ||
+    pathname === "/cart" ||
+    pathname === "/checkout" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    isProductDetailPage
+  ) {
     return null;
   }
 

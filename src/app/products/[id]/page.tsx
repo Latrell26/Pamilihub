@@ -150,6 +150,16 @@ export default async function ProductDetailPage({
               >
                 Sign in to Order
               </Link>
+            ) : user?.role === "seller" ? (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2 font-medium">
+                <span>🏪</span>
+                <span>Signed in as Food Merchant — shopping cart is reserved for customers.</span>
+              </div>
+            ) : user?.role === "admin" ? (
+              <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs flex items-center gap-2 font-medium">
+                <span>🛡️</span>
+                <span>Signed in as Administrator — catalog inspection mode.</span>
+              </div>
             ) : null}
           </div>
         </div>

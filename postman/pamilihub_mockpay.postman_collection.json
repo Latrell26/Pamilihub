@@ -27,7 +27,27 @@
       "type": "string"
     },
     {
+      "key": "approveOrderId",
+      "value": "REPLACE_WITH_A_MOCKPAY_ORDER_TO_APPROVE",
+      "type": "string"
+    },
+    {
+      "key": "cancelOrderId",
+      "value": "REPLACE_WITH_A_MOCKPAY_ORDER_TO_CANCEL",
+      "type": "string"
+    },
+    {
       "key": "validOrderTotal",
+      "value": "290.00",
+      "type": "string"
+    },
+    {
+      "key": "approveAmount",
+      "value": "290.00",
+      "type": "string"
+    },
+    {
+      "key": "cancelAmount",
       "value": "290.00",
       "type": "string"
     },
@@ -274,7 +294,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"order_id\": \"{{validOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"approve\"\n}"
+          "raw": "{\n  \"order_id\": \"{{approveOrderId}}\",\n  \"amount\": {{approveAmount}},\n  \"result\": \"approve\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/mockpay",
@@ -324,7 +344,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"order_id\": \"{{validOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"cancel\"\n}"
+          "raw": "{\n  \"order_id\": \"{{cancelOrderId}}\",\n  \"amount\": {{cancelAmount}},\n  \"result\": \"cancel\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/mockpay",
@@ -373,7 +393,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"order_id\": \"{{codOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"approve\"\n}"
+          "raw": "{\n  \"order_id\": \"{{codOrderId}}\",\n  \"amount\": {{cancelAmount}},\n  \"result\": \"approve\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/mockpay",
@@ -422,7 +442,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"order_id\": \"{{cancelledOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"approve\"\n}"
+          "raw": "{\n  \"order_id\": \"{{cancelledOrderId}}\",\n  \"amount\": {{cancelAmount}},\n  \"result\": \"approve\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/mockpay",

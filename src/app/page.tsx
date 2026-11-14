@@ -1,20 +1,46 @@
 import Link from "next/link";
 import { getHeaderUser } from "@/lib/auth/header-user";
-import { getProducts } from "@/modules/catalog/queries";
+import { getCategories, getProducts } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 
-const FOOD_CATEGORIES = [
-  { name: "Pies & Tarts", icon: "🥧", desc: "Famous San Pablo Buko Pie" },
-  { name: "Native Kakanin", icon: "🥥", desc: "Espasol, Kalamay & Bibingka" },
-  { name: "Laguna Coffee", icon: "☕", desc: "Locally roasted beans" },
-  { name: "Pasalubong", icon: "🛍️", desc: "Sweet preserves & snacks" },
+const CATEGORY_META: Record<string, { icon: string; desc: string }> = {
+  "pies": { icon: "🥧", desc: "Famous San Pablo Buko Pie & pastries" },
+  "pastries": { icon: "🥐", desc: "Fresh baked pies and tarts" },
+  "kakanin": { icon: "🥥", desc: "Espasol, Kalamay & Bibingka" },
+  "coffee": { icon: "☕", desc: "Locally roasted Barako beans" },
+  "snacks": { icon: "🛍️", desc: "Sweet preserves & native snacks" },
+};
+
+function getCategoryMeta(name: string) {
+  const lower = name.toLowerCase();
+  for (const [key, meta] of Object.entries(CATEGORY_META)) {
+    if (lower.includes(key)) return meta;
+  }
+  return { icon: "🍲", desc: "Authentic San Pablo delicacies" };
+}
+
+const FALLBACK_CATEGORIES = [
+  { id: "", name: "Pies & Tarts", icon: "🥧", desc: "Famous San Pablo Buko Pie" },
+  { id: "", name: "Native Kakanin", icon: "🥥", desc: "Espasol, Kalamay & Bibingka" },
+  { id: "", name: "Laguna Coffee", icon: "☕", desc: "Locally roasted beans" },
+  { id: "", name: "Pasalubong", icon: "🛍️", desc: "Sweet preserves & snacks" },
 ];
 
 export default async function HomePage() {
-  const [user, featuredProducts] = await Promise.all([
+  const [user, featuredProducts, categories] = await Promise.all([
     getHeaderUser(),
     getProducts({}),
+    getCategories(),
   ]);
+
+  const displayCategories =
+    categories && categories.length > 0
+      ? categories.slice(0, 4).map((c) => ({
+          id: c.id,
+          name: c.name,
+          ...getCategoryMeta(c.name),
+        }))
+      : FALLBACK_CATEGORIES;
 
   const recentProducts = (featuredProducts ?? []).slice(0, 4);
 
@@ -109,10 +135,10 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {FOOD_CATEGORIES.map((cat) => (
+          {displayCategories.map((cat) => (
             <Link
               key={cat.name}
-              href="/products"
+              href={cat.id ? `/products?category=${cat.id}` : "/products"}
               className="p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all group flex flex-col justify-between active:scale-[0.98]"
             >
               <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">

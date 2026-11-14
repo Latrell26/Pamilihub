@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { OrderSummary, OrderDetail } from "@/modules/orders/types";
 import { getSellerOrdersListOnly, getSellerOrderById } from "@/modules/orders/queries";
 import { OrderList } from "@/components/seller/orders/OrderList";

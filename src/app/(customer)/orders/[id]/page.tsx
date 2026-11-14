@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getOrderById } from "@/modules/orders/queries";
 import { getHeaderUser } from "@/lib/auth/header-user";
+import { getSellerStatus } from "@/modules/accounts/queries";
 import { OrderStatusBadge, PaymentBadge } from "@/components/seller/orders/StatusBadge";
 import type { OrderStatus, PaymentStatus, PaymentMethod } from "@/modules/orders/types";
 
@@ -66,10 +67,15 @@ export default async function OrderDetailPage({
     );
   }
 
-  // Access control
+  // Access control: customer who placed order, seller who owns the store, or platform admin
   const isOwner = order.customer_id === user.id;
-  const isSeller = user.role === "seller" && order.sellerStoreName !== null;
-  if (!isOwner && user.role !== "admin" && !isSeller) {
+  let isStoreSeller = false;
+  if (user.role === "seller") {
+    const seller = await getSellerStatus();
+    isStoreSeller = seller !== null && seller.id === order.seller_id;
+  }
+
+  if (!isOwner && user.role !== "admin" && !isStoreSeller) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
         <h1 className="text-xl font-bold text-foreground">Not authorized</h1>

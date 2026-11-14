@@ -16,6 +16,11 @@ export default function SiteHeader({
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const { itemCount } = useCart();
 
+  // Hide header completely on login and register pages
+  if (isAuthPage) {
+    return null;
+  }
+
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
     customer: [
       { href: "/products", label: "Delicacies" },
@@ -73,8 +78,8 @@ export default function SiteHeader({
             </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Desktop Nav Links (Large screens >= 1024px) */}
+          <nav className="hidden lg:flex items-center gap-1">
             {links.map((l) => {
               const active = pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href));
               return (
@@ -94,16 +99,16 @@ export default function SiteHeader({
           </nav>
         </div>
 
-        {/* Right side actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right side actions — Desktop only (>= 1024px). On phone & tablet, Cart and Account belong in the bottom navbar */}
+        <div className="hidden lg:flex items-center gap-3">
           {/* Cart Icon Button - only for authenticated customers */}
           {user?.role === "customer" && (
             <Link
               href="/cart"
-              className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"
+              className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"
               aria-label="Shopping Cart"
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ShoppingBag className="w-5 h-5" />
               {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-primary-foreground shadow-md animate-in zoom-in-50">
                   {itemCount > 99 ? "99+" : itemCount}
@@ -117,14 +122,14 @@ export default function SiteHeader({
             <div className="flex items-center gap-2">
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-[10px] uppercase">
                   {user.role[0]}
                 </div>
-                <span className="capitalize hidden sm:inline">{user.role}</span>
+                <span className="capitalize">{user.role}</span>
               </Link>
-              <form action={signoutAction} className="hidden sm:inline">
+              <form action={signoutAction}>
                 <button
                   type="submit"
                   className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"

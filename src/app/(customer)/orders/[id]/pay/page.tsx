@@ -35,10 +35,9 @@ export default async function OrderPayPage({
     );
   }
 
-  // Access control
+  // Access control — only the customer who placed the order may submit payment
   const isOwner = order.customer_id === user.id;
-  const isSeller = user.role === "seller" && order.sellerStoreName !== null;
-  if (!isOwner && user.role !== "admin" && !isSeller) {
+  if (!isOwner) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
         <h1 className="text-xl font-bold text-foreground">Not authorized</h1>
