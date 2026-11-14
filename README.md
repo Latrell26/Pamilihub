@@ -63,8 +63,9 @@ Run the SQL migrations located in `supabase/migrations/` in sequential order via
 4. `004_rpc_functions.sql` (Payment processing & order status)
 5. `005_storage_bucket.sql` & `006_storage_policy_hardening.sql` (Product images storage bucket)
 6. `007_stock_transaction.sql`, `008_stock_functions_security_definer.sql`, `009_fix_stock_function_loops.sql`, `010_fix_update_order_status.sql` (Atomic stock & order updates)
+7. `011_harden_rls_policies.sql`, `012_fix_checkout_cart_atomic.sql`, `013_allow_seller_reapply.sql` (Security hardening & re-apply)
 
-*(Optional)* Seed demo records from `supabase/seed.sql`.
+*(Optional)* Demo data: run `pnpm tsx scripts/seed-demo.ts` to create seed accounts, sellers, categories, and products via the service-role key.
 
 ### 5. Start Development Server
 ```bash
@@ -78,26 +79,26 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 To test each role in the application, create accounts via `/register` or Supabase Auth:
 
-| Role | Sample User | Default Capabilities |
-|---|---|---|
-| **Admin** | `admin@pamilihub.local` | Platform dashboard, merchant approval, product moderation, order audit, categories. |
-| **Seller** | `maria@sanpablo.local` | Store profile, product listings, image uploads, master-detail order fulfillment. |
-| **Customer** | `customer@gmail.com` | Browse delicacies, add to cart, checkout with ₱50 flat delivery fee, MockPay / COD payment, live order tracking. |
+| Role | Sample User | Password | Default Capabilities |
+|---|---|---|---|
+| **Admin** | `admin@pamilihub.test` | `password123` | Platform dashboard, merchant approval, product moderation, order audit, categories. |
+| **Seller** | `maria@pamilihub.test` | `password123` | Store profile, product listings, image uploads, master-detail order fulfillment. |
+| **Customer** | `ana@pamilihub.test` | `password123` | Browse delicacies, add to cart, checkout with ₱50 flat delivery fee, MockPay / COD payment, live order tracking. |
 
 ---
 
 ## 🧪 Postman & Quality Assurance
 
 - **MockPay API Postman Collection:** Located at `postman/pamilihub_mockpay.postman_collection.json`. Covers 6 automated test scenarios (401 Unauthorized, 403 Forbidden, 404 Not Found, 400 Bad Request, 200 Payment Approved, 200 Payment Cancelled).
-- **Functional Test Cases:** Detailed test matrix documented in [`docs/test-cases.md`](file:///docs/test-cases.md).
+- **Functional Test Cases:** Detailed test matrix documented in [`docs/test-cases.md`](docs/test-cases.md).
 
 ---
 
 ## 📚 Project Documentation
 
-- [`docs/PROJECT.md`](file:///docs/PROJECT.md) — Problem statement, objectives, scope, and boundaries.
-- [`docs/ARCHITECTURE.md`](file:///docs/ARCHITECTURE.md) — System architecture, module layout, and tech stack.
-- [`docs/DATABASE.md`](file:///docs/DATABASE.md) — Database schema, status enums, and RLS policies.
-- [`docs/TECHNICAL.md`](file:///docs/TECHNICAL.md) — In-depth technical architecture and atomic transactions.
-- [`docs/USER_GUIDE.md`](file:///docs/USER_GUIDE.md) — User manual for Customers, Merchants, and Admins.
-- [`docs/EVALUATION.md`](file:///docs/EVALUATION.md) — ISO/IEC 25010 software quality evaluation survey and results.
+- [`docs/PROJECT.md`](docs/PROJECT.md) — Problem statement, objectives, scope, and boundaries.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — System architecture, module layout, and tech stack.
+- [`docs/DATABASE.md`](docs/DATABASE.md) — Database schema, status enums, and RLS policies.
+- [`docs/TECHNICAL.md`](docs/TECHNICAL.md) — In-depth technical architecture and atomic transactions.
+- [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — User manual for Customers, Merchants, and Admins.
+- [`docs/EVALUATION.md`](docs/EVALUATION.md) — ISO/IEC 25010 software quality evaluation survey and results.

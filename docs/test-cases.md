@@ -1,5 +1,9 @@
 # Test Cases & QA Verification — (SP) Pamilihub
 
+> **Status key:** `PASS` = verified during QA execution · `PENDING` = test case written but not yet executed with evidence.
+>
+> Tests requiring manual setup (e.g., Postman token replacement, concurrent sessions) are marked `PENDING` until QA runs them and records date/tester/evidence.
+
 This document outlines the functional test cases, security checks, and verification procedures for the **(SP) Pamilihub** e-commerce platform.
 
 ---
@@ -37,7 +41,7 @@ This document outlines the functional test cases, security checks, and verificat
 | **CART-03** | Multi-Seller Order Splitting | Cart contains items from 2 different sellers; proceed to `/checkout` | System groups items by seller; calculates ₱50 flat delivery fee per seller; displays separate order totals. | PASS |
 | **CART-04** | Server-Side Checkout Validation | Submit checkout with blank address or invalid phone number | Zod schema rejects submission; returns inline validation errors without creating orders. | PASS |
 | **CART-05** | Atomic Stock Deduction | Complete checkout for valid items | PostgreSQL atomic function `deduct_stock` decrements product stock; orders created in DB; cart clears. | PASS |
-| **CART-06** | Overselling Prevention | Two sessions order the last available stock simultaneously | Atomic transaction locks rows; first order succeeds, second fails with "Stock check failed". | PASS |
+| **CART-06** | Overselling Prevention | Two sessions order the last available stock simultaneously | Atomic transaction locks rows; first order succeeds, second fails with "Stock check failed". | PENDING |
 
 ---
 
@@ -49,7 +53,7 @@ This document outlines the functional test cases, security checks, and verificat
 | **PAY-02** | MockPay Approval | Click "Approve Payment" | Database function `process_mockpay` updates `payment_status = 'paid'`, records payment in `payments` table. | PASS |
 | **PAY-03** | MockPay Cancellation & Stock Restore | Click "Cancel Payment" | Payment cancelled; order status updated to `cancelled`; `restore_stock` automatically returns items to inventory. | PASS |
 | **PAY-04** | Cash on Delivery (COD) | Place order with COD method | Order created with `payment_method = 'cod'` and `payment_status = 'pending'`. Payment flips to `paid` when seller marks completed. | PASS |
-| **PAY-05** | Postman API Security Suite | Run `postman/pamilihub_mockpay.postman_collection.json` (6 test cases) | Validates 401 Unauthorized (missing header), 403 Forbidden (wrong role), 404 Not Found, 400 Bad Request, 200 OK. | PASS |
+| **PAY-05** | Postman API Security Suite | Run `postman/pamilihub_mockpay.postman_collection.json` (6 test cases) | Validates 401 Unauthorized (missing header), 403 Forbidden (wrong role), 404 Not Found, 400 Bad Request, 200 OK. | PENDING |
 
 ---
 

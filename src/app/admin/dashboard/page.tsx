@@ -1,6 +1,18 @@
 import Link from "next/link";
 import { getAdminDashboardMetrics } from "@/modules/admin/queries";
 import AdminNav from "@/components/admin/AdminNav";
+import {
+  ShieldCheck,
+  TrendingUp,
+  Package,
+  Store,
+  UtensilsCrossed,
+  ArrowRight,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +25,7 @@ export default async function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-[11px] font-bold text-primary mb-1">
-            <span>🛡️</span>
+            <ShieldCheck className="w-3.5 h-3.5" />
             <span>Platform Administration</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
@@ -28,9 +40,9 @@ export default async function AdminDashboardPage() {
           {metrics.sellersCount.pending > 0 && (
             <Link
               href="/admin/sellers"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-bold animate-pulse"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-bold animate-pulse"
             >
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
               <span>{metrics.sellersCount.pending} Pending Application{metrics.sellersCount.pending > 1 ? "s" : ""}</span>
             </Link>
           )}
@@ -45,7 +57,9 @@ export default async function AdminDashboardPage() {
         <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[11px] font-bold uppercase tracking-wider">Gross Sales (GMV)</span>
-            <span className="text-lg">💰</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
           <p className="text-xl sm:text-2xl font-black text-foreground">
             ₱{metrics.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -57,7 +71,9 @@ export default async function AdminDashboardPage() {
         <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[11px] font-bold uppercase tracking-wider">Platform Orders</span>
-            <span className="text-lg">📦</span>
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
+              <Package className="w-4 h-4" />
+            </div>
           </div>
           <p className="text-xl sm:text-2xl font-black text-foreground">
             {metrics.ordersCount.total}
@@ -73,7 +89,9 @@ export default async function AdminDashboardPage() {
         <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[11px] font-bold uppercase tracking-wider">Local Merchants</span>
-            <span className="text-lg">🏪</span>
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
+              <Store className="w-4 h-4" />
+            </div>
           </div>
           <p className="text-xl sm:text-2xl font-black text-foreground">
             {metrics.sellersCount.approved}
@@ -87,7 +105,9 @@ export default async function AdminDashboardPage() {
         <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-[11px] font-bold uppercase tracking-wider">Food Catalog</span>
-            <span className="text-lg">🥧</span>
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+              <UtensilsCrossed className="w-4 h-4" />
+            </div>
           </div>
           <p className="text-xl sm:text-2xl font-black text-foreground">
             {metrics.productsCount.total}
@@ -100,8 +120,9 @@ export default async function AdminDashboardPage() {
 
       {/* Secondary Status Breakdown Bar */}
       <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-sm space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Order Fulfillment Status Pipeline
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" />
+          <span>Order Fulfillment Status Pipeline</span>
         </h2>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
@@ -137,14 +158,15 @@ export default async function AdminDashboardPage() {
         <div className="rounded-2xl border border-border bg-card shadow-sm p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold text-foreground text-sm sm:text-base flex items-center gap-2">
-              <span>📦</span>
+              <Package className="w-4 h-4 text-primary" />
               <span>Recent Orders</span>
             </h2>
             <Link
               href="/admin/orders"
-              className="text-xs font-bold text-primary hover:underline"
+              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
             >
-              View all orders →
+              <span>View all orders</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
@@ -186,19 +208,21 @@ export default async function AdminDashboardPage() {
         <div className="rounded-2xl border border-border bg-card shadow-sm p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold text-foreground text-sm sm:text-base flex items-center gap-2">
-              <span>🛡️</span>
+              <ShieldCheck className="w-4 h-4 text-primary" />
               <span>Pending Seller Applications</span>
             </h2>
             <Link
               href="/admin/sellers"
-              className="text-xs font-bold text-primary hover:underline"
+              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
             >
-              Review all →
+              <span>Review all</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {metrics.pendingSellers.length === 0 ? (
             <div className="p-6 rounded-xl border border-dashed border-border text-center space-y-1">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
               <p className="text-xs font-semibold text-foreground">All caught up!</p>
               <p className="text-[11px] text-muted-foreground">No pending merchant applications to review.</p>
             </div>

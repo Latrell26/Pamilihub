@@ -184,20 +184,7 @@ export async function applySellerAction(
     };
   }
 
-  // Prevent duplicate pending/rejected applications
-  const { data: existing } = await supabase
-    .from("sellers")
-    .select("status")
-    .eq("profile_id", user.id)
-    .single();
-
-  if (existing && existing.status === "pending") {
-    return {
-      success: false,
-      message: "You already have a pending seller application.",
-    };
-  }
-
+  // Parse and validate the application form first
   const parsed = sellerApplicationSchema.safeParse({
     store_name: formData.get("store_name"),
     description: formData.get("description"),
@@ -209,6 +196,42 @@ export async function applySellerAction(
       success: false,
       message: "Validation failed.",
       errors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  // Prevent duplicate pending applications; allow rejected sellers to re-apply
+  const { data: existing } = await supabase
+    .from("sellers")
+    .select("id, status")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.status === "pending") {
+      return {
+        success: false,
+        message: "You already have a pending seller application.",
+      };
+    }
+    // Re-apply: update the existing rejected row back to pending
+    const { error: updError } = await supabase
+      .from("sellers")
+      .update({
+        store_name: parsed.data.store_name,
+        description: parsed.data.description,
+        location: parsed.data.location,
+        status: "pending",
+      })
+      .eq("profile_id", user.id);
+
+    if (updError) {
+      return { success: false, message: updError.message };
+    }
+
+    revalidatePath("/apply");
+    return {
+      success: true,
+      message: "Seller application resubmitted for review.",
     };
   }
 
@@ -224,6 +247,6 @@ export async function applySellerAction(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/seller/apply");
+  revalidatePath("/apply");
   return { success: true, message: "Seller application submitted." };
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signoutAction } from "@/modules/accounts/actions";
 import type { HeaderUser } from "@/lib/auth/header-user";
 import { useCart } from "@/lib/cart/cart-context";
+import { ShoppingBag, MapPin, Sparkles } from "lucide-react";
 
 export default function SiteHeader({
   user,
@@ -44,11 +45,12 @@ export default function SiteHeader({
       <div className="bg-primary/5 border-b border-primary/10 py-1 px-4 text-center">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5 mx-auto sm:mx-0 truncate">
-            <span className="text-primary font-bold">📍 Delivering to:</span>
-            <span className="font-semibold text-foreground truncate">San Pablo City, Laguna</span>
+            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-semibold text-foreground truncate">Delivering to San Pablo City, Laguna</span>
             <span className="hidden sm:inline text-primary/60">• Flat ₱50 Delivery Fee</span>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1.5 text-primary/80">
+            <Sparkles className="w-3 h-3" />
             <span className="font-medium">Direct from Local Food Producers</span>
           </div>
         </div>
@@ -101,16 +103,7 @@ export default function SiteHeader({
               className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"
               aria-label="Shopping Cart"
             >
-              <svg
-                className="w-4 h-4 sm:w-5 sm:h-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-              </svg>
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
               {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-primary-foreground shadow-md animate-in zoom-in-50">
                   {itemCount > 99 ? "99+" : itemCount}

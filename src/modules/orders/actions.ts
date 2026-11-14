@@ -1,11 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/roles";
-import { requireRole } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
-import { checkoutSchema, type CheckoutInput } from "./schemas";
+import { z } from "zod";
+import { checkoutSchema, type CheckoutInput, cartItemSchema } from "./schemas";
 import { orderStatusUpdateSchema, type OrderStatusUpdateInput } from "./schemas";
 
 type ActionState = {
@@ -15,33 +14,19 @@ type ActionState = {
   errors?: Record<string, string[]>;
 };
 
-const DELIVERY_FEE = 50; // flat per seller order (₱)
-
-interface CartItemInput {
-  productId: string;
-  quantity: number;
-}
-
-interface ProductRow {
-  id: string;
-  seller_id: string;
-  name: string;
-  price: number;
-  stock: number;
-}
-
-/** Checkout: validate stock, create one order per seller, deduct stock.
+/** Checkout: validate cart, create one order per seller, deduct stock — all
+ *  inside a single database transaction via the checkout_cart RPC.
  *
- *  Cart items are expected to include product info (id, name, price, stock,
- *  seller_id, image_url, quantity). The server recomputes totals and never
- *  trusts client-sent prices.
+ *  The RPC (SECURITY DEFINER) validates stock cumulatively, locks product rows,
+ *  requires approved sellers, creates one order per seller with correct totals,
+ *  and deducts stock atomically. The client never sets prices, totals, or
+ *  payment_status.
  */
 export async function checkoutAction(
   _prev: ActionState | null,
   formData: FormData
 ): Promise<ActionState> {
   const supabase = createClient();
-  const admin = createAdminClient();
   const user = await getCurrentUser(supabase);
   if (!user) {
     return { success: false, message: "Not authenticated." };
@@ -72,132 +57,69 @@ export async function checkoutAction(
     return { success: false, message: "Cart is empty." };
   }
 
-  let cartItems: CartItemInput[];
+  let cartItemsRaw: unknown;
   try {
-    cartItems = JSON.parse(cartJson);
+    cartItemsRaw = JSON.parse(cartJson);
   } catch {
     return { success: false, message: "Invalid cart data." };
   }
 
-  if (!cartItems || cartItems.length === 0) {
+  const cartItemsParsed = z.array(cartItemSchema).safeParse(cartItemsRaw);
+  if (!cartItemsParsed.success) {
+    return {
+      success: false,
+      message: "Invalid cart items.",
+      errors: cartItemsParsed.error.flatten().fieldErrors as Record<
+        string,
+        string[]
+      >,
+    };
+  }
+  const cartItems: Array<{ productId: string; quantity: number }> =
+    cartItemsParsed.data;
+
+  if (cartItems.length === 0) {
     return { success: false, message: "Cart is empty." };
   }
 
-  // Fetch current product data from the database (never trust client prices/stock)
-  const productIds = Array.from(new Set(cartItems.map((i) => i.productId)));
-  const { data: products, error: prodError } = await supabase
-    .from("products")
-    .select("id, seller_id, name, price, stock")
-    .in("id", productIds);
-
-  if (prodError || !products) {
-    return { success: false, message: "Failed to load products." };
-  }
-
-  const productMap = new Map<string, ProductRow>();
-  for (const p of products) {
-    productMap.set(p.id, p as ProductRow);
-  }
-
-  // Validate stock and recompute per-seller totals
-  const itemsBySeller = new Map<string, Array<{ productId: string; quantity: number; name: string; price: number; sellerId: string }>>();
-  for (const item of cartItems) {
-    const product = productMap.get(item.productId);
-    if (!product) {
-      return { success: false, message: `Product not found: ${item.productId}` };
-    }
-    if (product.stock < item.quantity) {
-      return {
-        success: false,
-        message: `Not enough stock for "${product.name}" (${product.stock} left).`,
-      };
-    }
-    if (!itemsBySeller.has(product.seller_id)) {
-      itemsBySeller.set(product.seller_id, []);
-    }
-    itemsBySeller.get(product.seller_id)!.push({
-      productId: item.productId,
-      quantity: item.quantity,
-      name: product.name,
-      price: Number(product.price),
-      sellerId: product.seller_id,
-    });
-  }
-
-  // Deduct stock atomically via the database function (single transaction)
-  const deductItems = cartItems.map((i) => ({
+  // Build items payload for checkout_cart RPC
+  const p_items = cartItems.map((i) => ({
     product_id: i.productId,
     quantity: i.quantity,
   }));
-  const { error: deductError } = await admin.rpc("deduct_stock", {
-    p_order_items: deductItems,
-  });
-  if (deductError) {
-    console.error("checkout: deduct_stock failed:", deductError);
+
+  const p_delivery_info = {
+    name: parsed.data.deliveryName,
+    phone: parsed.data.deliveryPhone,
+    address: parsed.data.deliveryAddress,
+  };
+
+  // Call checkout_cart RPC: validates stock, creates one order per seller,
+  // deducts stock — all in a single database transaction.
+  const { data: rpcData, error: rpcError } = await supabase.rpc(
+    "checkout_cart",
+    {
+      p_items,
+      p_delivery_info,
+      p_payment_method: parsed.data.paymentMethod,
+    }
+  );
+
+  if (rpcError) {
+    console.error("checkout: checkout_cart failed:", rpcError);
     return {
       success: false,
-      message: deductError.message.includes("Insufficient stock")
-        ? deductError.message
-        : deductError.message.includes("Product not found")
-          ? deductError.message
-          : "Stock check failed. Please try again.",
+      message: rpcError.message.includes("Insufficient stock")
+        ? rpcError.message
+        : rpcError.message.includes("Product not found")
+          ? rpcError.message
+          : rpcError.message.includes("not available for ordering")
+            ? rpcError.message
+            : "Checkout failed. Please try again.",
     };
   }
 
-  // Create one order per seller
-  const orderIds: string[] = [];
-  const sellerEntries = Array.from(itemsBySeller.entries());
-  for (const [sellerId, items] of sellerEntries) {
-    const subtotal = items.reduce(
-      (acc: number, i) => acc + i.price * i.quantity,
-      0
-    );
-    const total = subtotal + DELIVERY_FEE;
-
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        customer_id: user.id,
-        seller_id: sellerId,
-        delivery_name: parsed.data.deliveryName,
-        delivery_phone: parsed.data.deliveryPhone,
-        delivery_address: parsed.data.deliveryAddress,
-        delivery_fee: DELIVERY_FEE,
-        total,
-        payment_method: parsed.data.paymentMethod,
-        payment_status: "pending",
-        order_status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (orderError) {
-      // Rollback: restore stock for all items already deducted
-      await admin.rpc("restore_stock", { p_order_items: deductItems });
-      return { success: false, message: "Failed to create order." };
-    }
-
-    orderIds.push(order.id);
-
-    // Create order items
-    const orderItems = items.map((i) => ({
-      order_id: order.id,
-      product_id: i.productId,
-      quantity: i.quantity,
-      unit_price: i.price,
-    }));
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-    if (itemsError) {
-      // Rollback: restore stock and delete the order
-      await admin.rpc("restore_stock", { p_order_items: deductItems });
-      await supabase.from("orders").delete().eq("id", order.id);
-      return { success: false, message: "Failed to create order items." };
-    }
-
-    // Payments record is written by the MockPay route (Phase 5), not here.
-  }
+  const orderIds: string[] = Array.isArray(rpcData) ? (rpcData as string[]) : [];
 
   return {
     success: true,

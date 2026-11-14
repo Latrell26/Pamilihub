@@ -2,6 +2,7 @@ import { getCategories, getProducts } from "@/modules/catalog/queries";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 import { getHeaderUser } from "@/lib/auth/header-user";
+import { Search } from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, string> = {
   "pies": "🥧",
@@ -49,20 +50,7 @@ export default async function CatalogPage({
           {categoryId && (
             <input type="hidden" name="category" value={categoryId} />
           )}
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="2.5"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.65 10.65Z"
-            />
-          </svg>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
           <button
             type="submit"
             className="absolute right-2 px-3.5 py-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"

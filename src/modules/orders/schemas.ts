@@ -16,6 +16,17 @@ export const checkoutSchema = z.object({
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
+/** Single cart item sent from the client during checkout. */
+export const cartItemSchema = z.object({
+  productId: z.string().uuid("Invalid product ID"),
+  quantity: z
+    .number()
+    .int("Quantity must be a whole number")
+    .positive("Quantity must be greater than 0"),
+});
+
+export type CartItemInput = z.infer<typeof cartItemSchema>;
+
 /** MockPay payment request validation. */
 export const mockpaySchema = z.object({
   order_id: z.string().uuid("Invalid order ID"),

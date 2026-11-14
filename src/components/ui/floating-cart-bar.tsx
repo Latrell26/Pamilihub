@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-context";
+import { ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function FloatingCartBar() {
   const pathname = usePathname();
@@ -20,11 +21,11 @@ export default function FloatingCartBar() {
         className="pointer-events-auto flex items-center justify-between gap-3 w-full max-w-md mx-auto p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/25 border border-primary/20 active:scale-[0.98] transition-transform"
       >
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 font-bold text-xs">
-            {itemCount}
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 font-bold text-xs shrink-0">
+            <ShoppingBag className="w-4 h-4" />
           </div>
           <div className="flex flex-col text-left">
-            <span className="font-bold text-xs leading-none">View Cart</span>
+            <span className="font-bold text-xs leading-none">View Cart ({itemCount})</span>
             <span className="text-[10px] text-white/80 leading-tight">
               {itemCount} delicacy item{itemCount !== 1 ? "s" : ""}
             </span>
@@ -35,8 +36,8 @@ export default function FloatingCartBar() {
           <span className="font-extrabold text-sm tracking-tight">
             ₱{subtotal.toFixed(2)}
           </span>
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-            →
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 text-xs font-bold">
+            <ArrowRight className="w-4 h-4" />
           </span>
         </div>
       </Link>

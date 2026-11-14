@@ -50,43 +50,25 @@ Pamilihub is built using a modern full-stack TypeScript architecture optimized f
 
 E-commerce platforms face race conditions when multiple customers purchase the last stock unit simultaneously. Pamilihub solves this in PostgreSQL using transactional locking functions:
 
-### 3.1 `deduct_stock(p_order_id UUID)`
-Executed inside checkout:
+### 3.1 `checkout_cart(p_items jsonb, p_delivery_info jsonb, p_payment_method text)`
+Executed inside checkout via `SECURITY DEFINER` RPC. Aggregates duplicate product IDs, validates quantities (> 0), locks product rows with `FOR UPDATE`, validates stock cumulatively, requires `seller.status = 'approved'`, groups items by seller, creates one `orders` record per seller with correct totals, inserts `order_items`, and deducts stock — all inside a single database transaction:
+
 ```sql
-create or replace function public.deduct_stock(p_order_id uuid)
-returns boolean as $$
-declare
-  item record;
-  v_current_stock integer;
-begin
-  for item in (
-    select product_id, quantity
-    from public.order_items
-    where order_id = p_order_id
-  ) loop
-    -- Acquire exclusive row lock to prevent race conditions
-    select stock into v_current_stock
-    from public.products
-    where id = item.product_id
-    for update;
-
-    if v_current_stock < item.quantity then
-      raise exception 'Insufficient stock for product %', item.product_id;
-    end if;
-
-    update public.products
-    set stock = stock - item.quantity,
-        updated_at = now()
-    where id = item.product_id;
-  end loop;
-
-  return true;
-end;
-$$ language plpgsql security definer;
+create or replace function public.checkout_cart(
+  p_items jsonb,
+  p_delivery_info jsonb,
+  p_payment_method text
+) returns setof uuid as $$
+-- ... validates customer role, aggregates items, locks rows,
+-- creates one order per seller, inserts order_items, deducts stock
+$$ language plpgsql security definer
+set search_path = public;
 ```
 
-### 3.2 `restore_stock(p_order_id UUID)`
-Invoked automatically when an order is cancelled by the customer, rejected by the seller, or cancelled on the MockPay payment gateway. Iterates through order items and restores quantities to the product records.
+Returns the set of created `order_id`s. `deduct_stock(p_order_items jsonb)` and `restore_stock(p_order_items jsonb)` remain as lower-level helpers (SECURITY DEFINER, executable only by `service_role`) used internally for stock consistency.
+
+### 3.2 `restore_stock(p_order_items jsonb)`
+Invoked automatically when an order is cancelled before payment, or when a paid order is rejected/cancelled (simulated refund). Iterates through order items and restores quantities to the product records.
 
 ---
 
@@ -97,7 +79,7 @@ Customers may add products from different San Pablo sellers in a single browsing
 1. **Client-side grouping:** The cart identifies items by `product.seller_id`.
 2. **Delivery Fee Calculation:** Flat ₱50 delivery fee is applied *per distinct seller*:
    $$\text{Total Delivery Fee} = \text{Unique Sellers Count} \times ₱50$$
-3. **Server Action (`checkoutAction`):** Iterates over grouped seller items, creates an independent `orders` record for each seller, inserts corresponding `order_items`, and executes `deduct_stock` for each order.
+3. **Server Action (`checkoutAction`):** Validates cart items with Zod, then calls the `checkout_cart` SECURITY DEFINER RPC which validates stock cumulatively, creates one order per seller with correct totals, inserts `order_items`, and deducts stock — all inside a single database transaction.
 4. **Order Redirection:**
    - Single seller order: Directs customer straight to `/orders/[id]/pay` (for MockPay) or `/orders/[id]` (for COD).
    - Multi-seller order: Directs customer to `/orders` displaying all placed orders.
