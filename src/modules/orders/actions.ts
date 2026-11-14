@@ -107,15 +107,26 @@ export async function checkoutAction(
 
   if (rpcError) {
     console.error("checkout: checkout_cart failed:", rpcError);
+    const msg = rpcError.message;
     return {
       success: false,
-      message: rpcError.message.includes("Insufficient stock")
-        ? rpcError.message
-        : rpcError.message.includes("Product not found")
-          ? rpcError.message
-          : rpcError.message.includes("not available for ordering")
-            ? rpcError.message
-            : "Checkout failed. Please try again.",
+      message: msg.includes("Insufficient stock")
+        ? msg
+        : msg.includes("Product not found")
+          ? msg
+          : msg.includes("not available for ordering")
+            ? msg
+            : msg.includes("Cart is empty")
+              ? msg
+              : msg.includes("Missing delivery information")
+                ? msg
+                : msg.includes("Only customers can checkout")
+                  ? msg
+                  : msg.includes("Invalid payment method")
+                    ? msg
+                    : msg.includes("Invalid quantity")
+                      ? msg
+                      : "Checkout failed. Please try again.",
     };
   }
 
