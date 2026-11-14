@@ -107,7 +107,24 @@ export async function checkoutAction(
 
   if (rpcError) {
     console.error("checkout: checkout_cart failed:", rpcError);
-    const msg = rpcError.message;
+    let msg = rpcError.message;
+
+    // R9: A checkout stock error names the food and never shows a UUID.
+    const uuidMatches = msg.match(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi
+    );
+    if (uuidMatches && uuidMatches.length > 0) {
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name")
+        .in("id", uuidMatches);
+      const prodMap = new Map((prods ?? []).map((p) => [p.id, p.name]));
+      for (const uid of uuidMatches) {
+        const foodName = prodMap.get(uid);
+        msg = msg.replaceAll(uid, foodName ? `"${foodName}"` : "the selected food");
+      }
+    }
+
     return {
       success: false,
       message: msg.includes("Insufficient stock")

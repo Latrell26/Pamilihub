@@ -67,7 +67,15 @@ export default function CheckoutPage() {
       clearCart();
       router.push("/orders");
     } else {
-      setError(result.message || "Checkout failed. Please check the fields.");
+      let rawMsg = result.message || "Checkout failed. Please check the fields.";
+      for (const item of items) {
+        rawMsg = rawMsg.replaceAll(item.productId, `"${item.name}"`);
+      }
+      rawMsg = rawMsg.replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi,
+        "selected food"
+      );
+      setError(rawMsg);
       setFieldErrors(result.errors ?? {});
     }
     setLoading(false);
