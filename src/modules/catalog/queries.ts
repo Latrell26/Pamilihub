@@ -31,6 +31,37 @@ export type ProductWithSeller = {
 
 export type Product = Omit<ProductWithSeller, "sellers">;
 
+export type StoreListItem = {
+  id: string;
+  store_name: string;
+  description: string | null;
+  location: string | null;
+  status: string;
+  productCount: number;
+  matchingFoodNames: string[];
+  matchedByStoreName: boolean;
+  categories: { id: string; name: string }[];
+  sampleProducts: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string | null;
+  }[];
+};
+
+export type StoreDetail = {
+  id: string;
+  store_name: string;
+  description: string | null;
+  location: string | null;
+  status: string;
+  categories: { id: string; name: string }[];
+  products: (ProductWithSeller & { category_name?: string })[];
+};
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const normalizeSeller = (value: unknown) =>
   Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 
@@ -143,4 +174,224 @@ export async function getSellerProducts(): Promise<ProductWithSeller[] | null> {
   if (!seller) return null;
 
   return getProducts({ sellerId: seller.id });
+}
+
+/** Get categories that have at least one food in an approved store (for R4). */
+export async function getApprovedCategories(): Promise<{
+  allCategories: Category[];
+  approvedCategoryIds: string[];
+}> {
+  const supabase = createClient();
+  const [categories, { data: prods }] = await Promise.all([
+    getCategories(),
+    supabase.from("products").select("category_id"),
+  ]);
+
+  const approvedIds = Array.from(
+    new Set((prods ?? []).map((p: any) => p.category_id as string).filter(Boolean))
+  );
+
+  return {
+    allCategories: categories ?? [],
+    approvedCategoryIds: approvedIds,
+  };
+}
+
+/**
+ * List approved stores matching active filters (R1 - R4).
+ */
+export async function getApprovedStores({
+  categoryId,
+  search,
+}: {
+  categoryId?: string;
+  search?: string;
+} = {}): Promise<StoreListItem[]> {
+  const supabase = createClient();
+
+  const cleanSearch = typeof search === "string" ? search.trim().slice(0, 80) : "";
+  const hasSearch = cleanSearch.length > 0;
+  const searchLower = cleanSearch.toLowerCase();
+
+  const [categories, { data: sellersData, error }] = await Promise.all([
+    getCategories(),
+    supabase
+      .from("sellers")
+      .select(
+        `
+        id,
+        store_name,
+        description,
+        location,
+        status,
+        products (
+          id,
+          name,
+          price,
+          stock,
+          image_url,
+          category_id
+        )
+      `
+      )
+      .eq("status", "approved")
+      .order("store_name", { ascending: true }),
+  ]);
+
+  if (error || !sellersData) {
+    return [];
+  }
+
+  const catMap = new Map((categories ?? []).map((c) => [c.id, c.name]));
+
+  const result: StoreListItem[] = [];
+
+  for (const seller of sellersData) {
+    if (seller.status !== "approved") continue;
+
+    const allProducts = (seller.products ?? []) as {
+      id: string;
+      name: string;
+      price: number;
+      stock: number;
+      image_url: string | null;
+      category_id: string;
+    }[];
+
+    // If store has 0 products overall, it cannot appear (R1)
+    if (allProducts.length === 0) continue;
+
+    // Filter products by category if categoryId is provided
+    const productsInCat = categoryId
+      ? allProducts.filter((p) => p.category_id === categoryId)
+      : allProducts;
+
+    // Check if store name matches search (R2)
+    const matchedByStoreName = hasSearch
+      ? seller.store_name.toLowerCase().includes(searchLower)
+      : false;
+
+    // Check which foods in this store match search
+    const matchingFoods = hasSearch
+      ? productsInCat.filter((p) => p.name.toLowerCase().includes(searchLower))
+      : [];
+    const matchingFoodNames = matchingFoods.map((p) => p.name);
+
+    // Apply R1:
+    let matchesActiveFilters = false;
+
+    if (!hasSearch && !categoryId) {
+      matchesActiveFilters = allProducts.length > 0;
+    } else if (hasSearch && !categoryId) {
+      matchesActiveFilters =
+        (matchedByStoreName && allProducts.length > 0) || matchingFoods.length > 0;
+    } else if (!hasSearch && categoryId) {
+      matchesActiveFilters = productsInCat.length > 0;
+    } else {
+      matchesActiveFilters =
+        (matchedByStoreName && productsInCat.length > 0) || matchingFoods.length > 0;
+    }
+
+    if (!matchesActiveFilters) continue;
+
+    // Extract categories present in this store
+    const storeCatIds = Array.from(new Set(allProducts.map((p) => p.category_id)));
+    const storeCategories = storeCatIds
+      .map((id) => ({ id, name: catMap.get(id) ?? "Other" }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    result.push({
+      id: seller.id,
+      store_name: seller.store_name,
+      description: seller.description,
+      location: seller.location,
+      status: seller.status,
+      productCount: allProducts.length,
+      matchingFoodNames,
+      matchedByStoreName,
+      categories: storeCategories,
+      sampleProducts: allProducts.slice(0, 3).map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        image_url: p.image_url,
+      })),
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Get one approved store's menu (R5).
+ * Validates UUID before making any DB query.
+ */
+export async function getStoreMenu(storeId: string): Promise<StoreDetail | null> {
+  if (!storeId || !UUID_REGEX.test(storeId)) {
+    return null;
+  }
+
+  const supabase = createClient();
+
+  const [categories, { data: store, error }] = await Promise.all([
+    getCategories(),
+    supabase
+      .from("sellers")
+      .select(
+        `
+        id,
+        store_name,
+        description,
+        location,
+        status,
+        products (
+          id,
+          seller_id,
+          category_id,
+          name,
+          description,
+          price,
+          stock,
+          image_url,
+          created_at,
+          updated_at
+        )
+      `
+      )
+      .eq("id", storeId)
+      .eq("status", "approved")
+      .maybeSingle(),
+  ]);
+
+  if (error || !store) return null;
+
+  const catMap = new Map((categories ?? []).map((c) => [c.id, c.name]));
+  const products = ((store.products ?? []) as any[]).map((p) => ({
+    ...p,
+    category_name: catMap.get(p.category_id) ?? "Delicacies",
+    sellers: {
+      store_name: store.store_name,
+      location: store.location,
+      status: store.status,
+    },
+  })) as (ProductWithSeller & { category_name?: string })[];
+
+  products.sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  const storeCatIds = Array.from(new Set(products.map((p) => p.category_id)));
+  const storeCategories = storeCatIds
+    .map((id) => ({ id, name: catMap.get(id) ?? "Other" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    id: store.id,
+    store_name: store.store_name,
+    description: store.description,
+    location: store.location,
+    status: store.status,
+    categories: storeCategories,
+    products,
+  };
 }
