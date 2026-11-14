@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import type { HeaderUser } from "@/lib/auth/header-user";
 import { useCart } from "@/lib/cart/cart-context";
 import {
-  Home,
   Utensils,
   Receipt,
   User,
@@ -38,7 +37,6 @@ export default function MobileBottomNav({
     ? [
         { href: "/seller/orders", label: "Orders", icon: ClipboardList, badge: undefined },
         { href: "/seller/products", label: "Products", icon: Store, badge: undefined },
-        { href: "/products", label: "Catalog", icon: Utensils, badge: undefined },
         { href: "/profile", label: "Account", icon: User, badge: undefined },
       ]
     : isAdmin
@@ -49,14 +47,13 @@ export default function MobileBottomNav({
         { href: "/profile", label: "Account", icon: User, badge: undefined },
       ]
     : [
-        { href: "/", label: "Home", icon: Home, badge: undefined },
         { href: "/products", label: "Delicacies", icon: Utensils, badge: undefined },
         { href: "/cart", label: "Cart", icon: ShoppingBag, badge: itemCount },
         { href: "/orders", label: "Orders", icon: Receipt, badge: undefined },
         { href: user ? "/profile" : "/login", label: user ? "Account" : "Sign In", icon: User, badge: undefined },
       ];
 
-  const gridCols = isSeller || isAdmin ? "grid-cols-4" : "grid-cols-5";
+  const gridCols = isSeller ? "grid-cols-3" : "grid-cols-4";
 
   return (
     <nav

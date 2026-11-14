@@ -62,21 +62,21 @@ export default function SiteHeader({
       </div>
 
       {/* Main App Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-4">
-        {/* Brand / Logo */}
+{/* Main App Bar: desktop only (>= 1024px) */}
+<div className="hidden lg:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 items-center justify-between gap-4">        {/* Brand / Logo */}
         <div className="flex items-center gap-6">
           <Link
-            href="/"
-            className="flex items-center gap-2.5 group font-extrabold text-base sm:text-lg tracking-tight text-foreground transition-colors"
-          >
-            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm shadow-md shadow-primary/25 group-hover:scale-105 transition-transform">
-              P
-            </div>
-            <div className="flex flex-col">
-              <span className="leading-tight font-black text-foreground">Pamilihub</span>
-              <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Food Delicacies</span>
-            </div>
-          </Link>
+          href={user?.role === "customer" ? "/products" : "/"}
+          className="hidden lg:flex items-center gap-2.5 group font-extrabold text-base sm:text-lg tracking-tight text-foreground transition-colors"
+        >
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm shadow-md shadow-primary/25 group-hover:scale-105 transition-transform">
+            P
+          </div>
+          <div className="flex flex-col">
+            <span className="leading-tight font-black text-foreground">Pamilihub</span>
+            <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Food Delicacies</span>
+          </div>
+        </Link>
 
           {/* Desktop Nav Links (Large screens >= 1024px) */}
           <nav className="hidden lg:flex items-center gap-1">
