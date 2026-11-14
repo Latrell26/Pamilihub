@@ -29,13 +29,16 @@ export function AddToCartButton({
   size = "md",
   userRole,
 }: AddToCartButtonProps) {
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
   const [added, setAdded] = useState(false);
 
   // Only authenticated customers can see and use the Add to Cart button
   if (userRole !== "customer") {
     return null;
   }
+
+  const inCartQty = items.find((i) => i.productId === productId)?.quantity ?? 0;
+  const isMaxReached = stock > 0 && inCartQty >= stock;
 
   if (stock === 0) {
     return (
@@ -50,6 +53,19 @@ export function AddToCartButton({
     );
   }
 
+  if (isMaxReached) {
+    return (
+      <Button
+        disabled
+        variant="outline"
+        size={size === "sm" ? "sm" : "default"}
+        className="w-full text-xs font-semibold text-muted-foreground cursor-not-allowed bg-muted/60"
+      >
+        Max stock in cart
+      </Button>
+    );
+  }
+
   return (
     <Button
       type="button"
@@ -57,6 +73,7 @@ export function AddToCartButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (inCartQty >= stock) return;
         addItem({ productId, name, price, stock, sellerId, sellerName, imageUrl });
         setAdded(true);
         setTimeout(() => setAdded(false), 1500);

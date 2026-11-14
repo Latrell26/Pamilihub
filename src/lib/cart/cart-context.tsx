@@ -74,15 +74,23 @@ export function CartProvider({
     (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
       setItems((prev) => {
         const existing = prev.find((i) => i.productId === item.productId);
+        const maxStock = Math.max(0, item.stock);
+        if (maxStock <= 0) return prev;
+
         if (existing) {
-          const newQty = existing.quantity + (item.quantity ?? 1);
+          const desired = existing.quantity + (item.quantity ?? 1);
+          const newQty = Math.min(maxStock, desired);
           return prev.map((i) =>
-            i.productId === item.productId ? { ...i, quantity: newQty } : i
+            i.productId === item.productId
+              ? { ...i, quantity: newQty, stock: item.stock }
+              : i
           );
         }
+        const initialQty = Math.min(maxStock, item.quantity ?? 1);
+        if (initialQty <= 0) return prev;
         return [
           ...prev,
-          { ...item, quantity: item.quantity ?? 1 },
+          { ...item, quantity: initialQty },
         ];
       });
     },
@@ -95,9 +103,14 @@ export function CartProvider({
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     setItems((prev) =>
-      prev.map((i) =>
-        i.productId === productId ? { ...i, quantity: Math.max(0, quantity) } : i
-      )
+      prev.map((i) => {
+        if (i.productId === productId) {
+          const maxStock = Math.max(0, i.stock);
+          const clamped = Math.min(maxStock, Math.max(0, quantity));
+          return { ...i, quantity: clamped };
+        }
+        return i;
+      })
     );
   }, []);
 
