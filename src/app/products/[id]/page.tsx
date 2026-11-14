@@ -3,12 +3,34 @@ import { getProductDetail } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 import { getHeaderUser } from "@/lib/auth/header-user";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default async function ProductDetailPage({
   params,
 }: Readonly<{
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }>) {
-  const { id } = await params;
+  const { id } = params;
+
+  if (!id || !UUID_REGEX.test(id)) {
+    return (
+      <div className="max-w-md mx-auto p-12 text-center space-y-4">
+        <div className="text-4xl">🥧</div>
+        <h1 className="text-lg font-bold text-foreground">Delicacy not found</h1>
+        <p className="text-xs text-muted-foreground">
+          The product you&#39;re looking for does not exist or may have been unlisted by the merchant.
+        </p>
+        <Link
+          href="/products"
+          className="inline-block px-5 py-2.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+        >
+          Browse Stores
+        </Link>
+      </div>
+    );
+  }
+
   const [product, user] = await Promise.all([
     getProductDetail(id),
     getHeaderUser(),
@@ -26,23 +48,24 @@ export default async function ProductDetailPage({
           href="/products"
           className="inline-block px-5 py-2.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
         >
-          Browse Catalog
+          Browse Stores
         </Link>
       </div>
     );
   }
 
   const inStock = product.stock > 0;
+  const storeHref = product.seller_id ? `/stores/${product.seller_id}` : "/products";
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
-      {/* Top Mobile Bar with Back link */}
+      {/* Top Mobile Bar with Back link to store */}
       <div className="flex items-center justify-between">
         <Link
-          href="/products"
+          href={storeHref}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors active:scale-95"
         >
-          <span>← Back</span>
+          <span>← Back to {product.sellers?.store_name ?? "Store Menu"}</span>
         </Link>
         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
           San Pablo Delicacy
@@ -95,16 +118,19 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Merchant Card */}
-          <div className="p-4 rounded-2xl border border-border bg-card flex items-center gap-3.5 shadow-sm">
-            <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg shrink-0">
+          <Link
+            href={storeHref}
+            className="p-4 rounded-2xl border border-border bg-card flex items-center gap-3.5 shadow-sm hover:border-primary/50 transition-colors group block"
+          >
+            <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               🏪
             </div>
             <div className="space-y-0.5 text-xs flex-1 min-w-0">
               <span className="text-[10px] uppercase font-bold text-primary block tracking-wider">
                 Local Food Merchant
               </span>
-              <p className="font-extrabold text-foreground text-sm truncate">
-                {product.sellers?.store_name ?? "San Pablo Merchant"}
+              <p className="font-extrabold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                {product.sellers?.store_name ?? "San Pablo Merchant"} →
               </p>
               {product.sellers?.location && (
                 <p className="text-muted-foreground truncate">
@@ -112,7 +138,7 @@ export default async function ProductDetailPage({
                 </p>
               )}
             </div>
-          </div>
+          </Link>
 
           {/* Description */}
           <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card space-y-2 shadow-sm">
