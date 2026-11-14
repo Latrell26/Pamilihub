@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type PayButtonProps = {
   orderId: string;
@@ -8,6 +9,7 @@ type PayButtonProps = {
 };
 
 export default function PayButton({ orderId, amount }: PayButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<"approve" | "cancel" | null>(null);
   const [error, setError] = useState("");
@@ -37,7 +39,7 @@ export default function PayButton({ orderId, amount }: PayButtonProps) {
         return;
       }
 
-      window.location.reload();
+      router.refresh();
     } catch {
       setError("Network error. Please try again.");
       setResult(null);

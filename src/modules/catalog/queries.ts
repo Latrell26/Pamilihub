@@ -1,5 +1,8 @@
 "use server";
 
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export type Category = {
@@ -31,18 +34,32 @@ export type Product = Omit<ProductWithSeller, "sellers">;
 const normalizeSeller = (value: unknown) =>
   Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 
-/** List all categories (public read). */
-export async function getCategories(): Promise<Category[] | null> {
-  const supabase = createClient();
+const getCachedCategories = unstable_cache(
+  async (): Promise<Category[]> => {
+    const supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name, created_at")
+      .order("name", { ascending: true });
 
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, name, created_at")
-    .order("name", { ascending: true });
+    if (error || !data) return [];
+    return data;
+  },
+  ["catalog-categories"],
+  { revalidate: 3600, tags: ["categories"] }
+);
 
-  if (error) return null;
-  return data ?? [];
-}
+/** List all categories (public read, cached across requests and deduplicated). */
+export const getCategories = cache(async (): Promise<Category[] | null> => {
+  try {
+    return await getCachedCategories();
+  } catch {
+    return [];
+  }
+});
 
 /**
  * List products with optional filters.

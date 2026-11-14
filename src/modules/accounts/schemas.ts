@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { passwordRules } from "./password-rules";
 
 // --- Auth ---
 
@@ -6,13 +7,22 @@ export const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z
     .string()
-    .min(6, "Password must be at least 6 characters")
-    .max(128),
+    .max(128, "Password is too long")
+    .superRefine((value, ctx) => {
+      // Enforce every rule shown in the register checklist.
+      for (const rule of passwordRules) {
+        if (!rule.test(value)) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: rule.label });
+        }
+      }
+    }),
   full_name: z.string().min(1, "Full name is required").trim(),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
 
+// Login only checks that a password was entered, so existing accounts
+// created under older rules can still sign in.
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),

@@ -6,21 +6,41 @@ export default function AuthLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="-mb-20 md:-mb-8 min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-muted/20 via-background to-background p-4 sm:p-6">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-1">
-          <Link href="/" className="inline-flex items-center gap-2 font-bold text-lg text-foreground hover:opacity-90 transition-opacity">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground font-black text-xs">
+    // Negative margin cancels the root layout's bottom padding on auth pages.
+    <div className="-mb-20 lg:-mb-8 flex min-h-screen flex-col bg-primary md:items-center md:justify-center md:p-6">
+      <div className="flex w-full flex-1 flex-col md:max-w-md md:flex-none">
+        {/* Pink hero */}
+        <header className="relative overflow-hidden px-6 pb-14 pt-10 text-center text-primary-foreground">
+          {/* Soft decorative circles */}
+          <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -right-8 top-16 h-28 w-28 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute bottom-2 left-6 select-none text-3xl opacity-30">
+            🥧
+          </div>
+          <div className="pointer-events-none absolute bottom-3 right-8 select-none text-3xl opacity-30">
+            ☕
+          </div>
+
+          <Link
+            href="/"
+            className="relative inline-flex items-center gap-2.5 transition-opacity hover:opacity-90"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-xl font-black text-primary shadow-lg shadow-black/10">
               P
             </span>
-            <span>Pamilihub</span>
+            <span className="text-2xl font-black tracking-tight">
+              Pamilihub
+            </span>
           </Link>
-          <p className="text-xs text-muted-foreground">San Pablo City Local Food Delicacies</p>
-        </div>
+          <p className="relative mt-3 text-sm font-medium text-white/90">
+            San Pablo&apos;s best, delivered to your door
+          </p>
+        </header>
 
-        <div className="bg-card p-6 sm:p-8 rounded-2xl shadow-sm border border-border">
+        {/* White sheet overlapping the hero */}
+        <main className="-mt-6 flex-1 rounded-t-[2rem] bg-background px-6 pb-10 pt-8 shadow-2xl shadow-black/20 md:flex-none md:rounded-b-[2rem]">
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

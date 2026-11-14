@@ -15,7 +15,11 @@ function formatDate(iso: string) {
 }
 
 export default async function OrdersPage() {
-  const user = await getHeaderUser();
+  const [user, orders] = await Promise.all([
+    getHeaderUser(),
+    getCustomerOrders(),
+  ]);
+
   if (!user) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
@@ -32,8 +36,6 @@ export default async function OrdersPage() {
       </div>
     );
   }
-
-  const orders = await getCustomerOrders();
 
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5">

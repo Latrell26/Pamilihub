@@ -1,5 +1,4 @@
-"use server";
-
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type HeaderUser = {
@@ -9,7 +8,7 @@ export type HeaderUser = {
   full_name: string | null;
 };
 
-export async function getHeaderUser(): Promise<HeaderUser | null> {
+export const getHeaderUser = cache(async (): Promise<HeaderUser | null> => {
   const supabase = createClient();
   const {
     data: { user },
@@ -28,4 +27,4 @@ export async function getHeaderUser(): Promise<HeaderUser | null> {
     role: (profile?.role as string | null) ?? "customer",
     full_name: profile?.full_name ?? null,
   };
-}
+});

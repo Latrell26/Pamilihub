@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { loginAction } from "@/modules/accounts/actions";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
-    setMessage("");
     setError("");
 
     const result = await loginAction(null, formData);
@@ -30,86 +30,111 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1 text-center">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Welcome back</h1>
-        <p className="text-xs text-muted-foreground">
-          Enter your credentials to access your account
+      <div className="space-y-1">
+        <h1 className="text-2xl font-black tracking-tight text-foreground">
+          Welcome back!
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Log in to order fresh San Pablo delicacies.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-start gap-2 animate-in fade-in-50">
-          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-          </svg>
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs font-medium text-primary"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
-      {message && (
-        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 animate-in fade-in-50">
-          {message}
-        </div>
-      )}
-
-      <form action={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+      <form action={handleSubmit} className="space-y-3.5">
+        {/* Email */}
+        <div className="relative">
+          <label htmlFor="email" className="sr-only">
             Email address
           </label>
+          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
+            id="email"
             type="email"
             name="email"
             required
             autoComplete="email"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-            placeholder="juan@example.com"
+            placeholder="Email address"
+            className="h-12 w-full rounded-2xl border border-transparent bg-muted/70 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
-              Password
-            </label>
-          </div>
+        {/* Password */}
+        <div className="relative">
+          <label htmlFor="password" className="sr-only">
+            Password
+          </label>
+          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
-            type="password"
+            id="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             required
             autoComplete="current-password"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-            placeholder="••••••••"
+            placeholder="Password"
+            className="h-12 w-full rounded-2xl border border-transparent bg-muted/70 pl-11 pr-12 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-60 transition-all cursor-pointer"
+          className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              <span>Signing in...</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Logging in...</span>
             </>
           ) : (
-            "Sign In"
+            "Log in"
           )}
         </button>
       </form>
 
-      <div className="pt-2 border-t border-border/60 text-center">
-        <p className="text-xs text-muted-foreground">
-          Don&#39;t have an account yet?{" "}
-          <Link href="/register" className="font-semibold text-foreground hover:underline">
-            Create an account
-          </Link>
-        </p>
+      {/* Divider */}
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        <span>or</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
+
+      <Link
+        href="/products"
+        className="flex h-12 w-full items-center justify-center rounded-full border-2 border-border bg-background text-sm font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+      >
+        Browse as guest
+      </Link>
+
+      <p className="text-center text-sm text-muted-foreground">
+        New to Pamilihub?{" "}
+        <Link
+          href="/register"
+          className="font-bold text-primary hover:underline"
+        >
+          Create an account
+        </Link>
+      </p>
     </div>
   );
 }

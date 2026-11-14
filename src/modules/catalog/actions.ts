@@ -8,7 +8,7 @@ import {
   productUpdateSchema,
 } from "./schemas";
 import { requireAdmin, requireRole, getCurrentUser } from "@/lib/auth/roles";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 type ActionState = {
   success: boolean;
@@ -51,6 +51,7 @@ export async function createCategoryAction(
 
   revalidatePath("/admin/categories");
   revalidatePath("/products", "layout");
+  revalidateTag("categories");
   return { success: true, message: "Category created." };
 }
 
@@ -85,6 +86,7 @@ export async function updateCategoryAction(
 
   revalidatePath("/admin/categories");
   revalidatePath("/products", "layout");
+  revalidateTag("categories");
   return { success: true, message: "Category updated." };
 }
 
@@ -108,6 +110,7 @@ export async function deleteCategoryAction(
 
   revalidatePath("/admin/categories");
   revalidatePath("/products", "layout");
+  revalidateTag("categories");
   return { success: true, message: "Category deleted." };
 }
 

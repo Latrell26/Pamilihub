@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getHeaderUser } from "@/lib/auth/header-user";
 import { getCategories, getProducts } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
@@ -27,8 +28,17 @@ const FALLBACK_CATEGORIES = [
 ];
 
 export default async function HomePage() {
-  const [user, featuredProducts, categories] = await Promise.all([
-    getHeaderUser(),
+  const user = await getHeaderUser();
+
+  if (user?.role === "admin") {
+    redirect("/admin/dashboard");
+  }
+
+  if (user?.role === "seller") {
+    redirect("/seller/orders");
+  }
+
+  const [featuredProducts, categories] = await Promise.all([
     getProducts({}),
     getCategories(),
   ]);

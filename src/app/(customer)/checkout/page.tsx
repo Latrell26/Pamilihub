@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-context";
 import { checkoutAction } from "@/modules/orders/actions";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { items, subtotal, isLoaded, clear: clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -63,7 +65,7 @@ export default function CheckoutPage() {
     if (result.success) {
       setMessage(result.message);
       clearCart();
-      window.location.href = "/orders";
+      router.push("/orders");
     } else {
       setError(result.message || "Checkout failed. Please check the fields.");
       setFieldErrors(result.errors ?? {});

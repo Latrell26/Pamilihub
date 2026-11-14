@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -7,12 +8,9 @@ export type AppUser = {
   role: "customer" | "seller" | "admin";
 };
 
-/**
- * Returns the current authenticated user with their profile role,
- * or null if not signed in.
- */
-export async function getCurrentUser(supabase?: ReturnType<typeof createClient>) {
-  const sb = supabase ?? createClient();
+/** Cached fetcher for current user to deduplicate round-trips within the same request. */
+const fetchCurrentUser = cache(async () => {
+  const sb = createClient();
   const {
     data: { user },
   } = await sb.auth.getUser();
@@ -29,6 +27,33 @@ export async function getCurrentUser(supabase?: ReturnType<typeof createClient>)
     email: user.email,
     role: (profile?.role as AppUser["role"]) ?? "customer",
   } as AppUser;
+});
+
+/**
+ * Returns the current authenticated user with their profile role,
+ * or null if not signed in. Deduplicated across RSC render tree.
+ */
+export async function getCurrentUser(supabase?: ReturnType<typeof createClient>) {
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: (profile?.role as AppUser["role"]) ?? "customer",
+    } as AppUser;
+  }
+
+  return fetchCurrentUser();
 }
 
 /**

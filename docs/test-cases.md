@@ -13,10 +13,24 @@ This document outlines the functional test cases, security checks, and verificat
 | Test ID | Test Scenario | Steps | Expected Result | Status |
 |---|---|---|---|---|
 | **AUTH-01** | Customer Registration | Register new account with email & password | User created in Supabase Auth; row auto-created in `profiles` with role `customer`. | PASS |
-| **AUTH-02** | User Sign In | Sign in with valid credentials | User authenticated; redirected to `/dashboard` or home page with role links in header. | PASS |
+| **AUTH-02** | User Sign In | Sign in with valid credentials | User authenticated; redirected to `/dashboard` which routes by role. | PASS |
 | **AUTH-03** | Customer Route Guard | Customer attempts to access `/admin/sellers` or `/seller/orders` | Blocked server-side via `requireAdmin()` / `requireRole('seller')`; redirected to `/unauthorized`. | PASS |
 | **AUTH-04** | Seller Route Guard | Non-approved seller or customer attempts to access `/seller/products` | Blocked server-side; redirected to `/unauthorized` or `/apply`. | PASS |
 | **AUTH-05** | Admin Route Guard | Admin visits `/admin/dashboard`, `/admin/orders`, `/admin/sellers`, `/admin/products` | Full access granted with administration control panel. | PASS |
+
+### 1.1 Role-Based Landing & Redirects
+
+| ID | Role | Steps | Expected | Status |
+|---|---|---|---|---|
+| **REDIR-01** | Guest | Navigate to `/` | Public storefront renders normally with search, hero, categories, and delicacies | PASS |
+| **REDIR-02** | Customer | Navigate to `/` | Public storefront renders normally with customer navigation | PASS |
+| **REDIR-03** | Admin | Navigate to `/` | Server-side redirect (`redirect("/admin/dashboard")`) right after `getHeaderUser()` | PASS |
+| **REDIR-04** | Seller | Navigate to `/` | Server-side redirect (`redirect("/seller/orders")`) right after `getHeaderUser()` | PASS |
+| **REDIR-05** | Admin | Navigate to `/dashboard` (direct or post-login) | Server-side redirect routes to `/admin/dashboard` | PASS |
+| **REDIR-06** | Seller | Navigate to `/dashboard` (direct or post-login) | Server-side redirect routes to `/seller/orders` | PASS |
+| **REDIR-07** | Customer | Navigate to `/dashboard` (direct or post-login) | Server-side redirect routes to `/products` (catalog) | PASS |
+| **REDIR-08** | Guest | Navigate to `/dashboard` without session | Renders "Sign In Required" view with link to `/login` | PASS |
+| **REDIR-09** | All Roles | Navigate to `/products` directly | Delicacy catalog accessible to all roles (guest, customer, seller, admin) | PASS |
 
 ---
 
@@ -99,3 +113,26 @@ The following cases were executed directly against the Supabase RPCs with the de
 - **PAY-07** — cancelled MockPay order returned: `Order is already in a terminal state (cancelled).`
 - **Cancel path** — `cancel` returned HTTP 204, set `cancelled`/`cancelled`, and restored stock (16 to 17).
 - **Approve path** — after MockPay approval the seller could accept the order (`paid`/`accepted`).
+
+---
+
+## 8. Role-Based Landing & Redirect Verification (2026-11-15)
+
+### Verification Matrix
+- **Guest (`/`):** Public storefront renders with search, hero banner, category pills, and delicacy listings.
+- **Customer (`ana@pamilihub.test`):** `/` renders public storefront; login redirects to `/dashboard`, which resolves role `customer` and immediately redirects to `/products`.
+- **Admin (`admin@pamilihub.test`):** Accessing `/` or `/dashboard` redirects server-side to `/admin/dashboard`.
+- **Seller (`maria@pamilihub.test`):** Accessing `/` or `/dashboard` redirects server-side to `/seller/orders`.
+- **Catalog Accessibility (`/products`):** Nav links to `/products` remain available and accessible across all roles.
+- **Unauthenticated `/dashboard`:** Renders "Sign In Required" view with link to `/login`.
+
+### Handoff Note for Planner
+> **To:** Planner
+> **From:** Frontend Agent
+> **Status:** Completed & Ready for QA
+>
+> Implemented role-based landing redirects:
+> 1. `src/app/page.tsx`: In `HomePage()`, immediately upon `getHeaderUser()` resolving, admin redirects to `/admin/dashboard` and seller redirects to `/seller/orders`. Guests and customers continue to access the public storefront.
+> 2. `src/app/dashboard/page.tsx`: After `getCurrentUser()`, replaced the workspace hub with server-side role redirects (admin -> `/admin/dashboard`, seller -> `/seller/orders`, customer -> `/products`). The unauthenticated "Sign In Required" view is preserved.
+> 3. `src/modules/accounts/actions.ts`: Unchanged. `loginAction` still routes to `/dashboard`, which now smoothly distributes users to their dedicated workspace.
+> 4. Test cases `REDIR-01` through `REDIR-09` added to `docs/test-cases.md`. Lint and build pass with zero errors.

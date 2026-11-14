@@ -40,7 +40,11 @@ export default async function OrderDetailPage({
 }: {
   params: { id: string };
 }) {
-  const user = await getHeaderUser();
+  const [user, order] = await Promise.all([
+    getHeaderUser(),
+    getOrderById(params.id),
+  ]);
+
   if (!user) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
@@ -52,8 +56,6 @@ export default async function OrderDetailPage({
       </div>
     );
   }
-
-  const order = await getOrderById(params.id);
 
   if (!order) {
     return (
