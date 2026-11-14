@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "a93d8b12-9214-4e4b-b230-192a5436f561",
     "name": "Pamilihub - MockPay Simulated Payment API",
-    "description": "Postman test suite for Pamilihub MockPay endpoint (POST /api/mockpay), validating security, role enforcement, order integrity, simulated payment approval, and cancellation with atomic stock restoration.",
+    "description": "Postman test suite for Pamilihub MockPay endpoint (POST /api/mockpay), validating security, role enforcement, order integrity, simulated payment approval, cancellation with atomic stock restoration, and the payment-gating guards (non-MockPay order and terminal order are rejected).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -34,6 +34,16 @@
     {
       "key": "nonExistentOrderId",
       "value": "99999999-9999-9999-9999-999999999999",
+      "type": "string"
+    },
+    {
+      "key": "codOrderId",
+      "value": "REPLACE_WITH_A_COD_ORDER_ID",
+      "type": "string"
+    },
+    {
+      "key": "cancelledOrderId",
+      "value": "REPLACE_WITH_A_CANCELLED_OR_REJECTED_ORDER_ID",
       "type": "string"
     }
   ],
@@ -326,7 +336,105 @@
             "mockpay"
           ]
         },
-        "description": "Valid simulated payment cancellation for an order. Expected: 200 OK with payment_status: cancelled and atomic stock restoration."
+        "description": "Valid simulated payment cancellation for an order. Expected: 200 OK with payment_status: cancelled, order_status: cancelled and atomic stock restoration."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Cash-on-Delivery Order Sent to MockPay -> 400 Bad Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Returns non-MockPay error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"This order was not placed via MockPay.\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{customerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{codOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"approve\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mockpay",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "mockpay"
+          ]
+        },
+        "description": "Calls POST /api/mockpay with an order that was paid cash-on-delivery. MockPay must refuse to process it. Expected: 400 Bad Request."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Cancelled or Rejected Order -> 400 Bad Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Returns no longer awaiting payment error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eql(\"Order is no longer awaiting payment.\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{customerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"{{cancelledOrderId}}\",\n  \"amount\": 290.00,\n  \"result\": \"approve\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mockpay",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "mockpay"
+          ]
+        },
+        "description": "Calls POST /api/mockpay with an order that was already cancelled or rejected. Expected: 400 Bad Request."
       },
       "response": []
     }
