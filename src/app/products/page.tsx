@@ -1,6 +1,7 @@
 import { getCategories, getProducts } from "@/modules/catalog/queries";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
+import { getHeaderUser } from "@/lib/auth/header-user";
 
 const CATEGORY_ICONS: Record<string, string> = {
   "pies": "🥧",
@@ -28,9 +29,10 @@ export default async function CatalogPage({
   const categoryId = typeof searchParams.category === "string" ? searchParams.category : undefined;
   const search = typeof searchParams.search === "string" ? searchParams.search : undefined;
 
-  const [categories, products] = await Promise.all([
+  const [categories, products, user] = await Promise.all([
     getCategories(),
     getProducts({ categoryId, search }),
+    getHeaderUser(),
   ]);
 
   return (
@@ -205,6 +207,7 @@ export default async function CatalogPage({
                     sellerName={product.sellers?.store_name ?? "Local Seller"}
                     imageUrl={product.image_url}
                     size="sm"
+                    userRole={user?.role}
                   />
                 </div>
               </div>

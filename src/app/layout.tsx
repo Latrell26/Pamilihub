@@ -35,13 +35,13 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased font-sans">
-        <CartProvider>
+        <CartProvider userId={user?.id ?? null}>
           <SiteHeader user={user} />
           {/* Main Content with bottom padding on mobile so it doesn't get covered by the bottom nav */}
           <div className="flex-1 pb-20 md:pb-8">
             {children}
           </div>
-          <FloatingCartBar />
+          {user?.role !== "seller" && user?.role !== "admin" && <FloatingCartBar />}
           <MobileBottomNav user={user} />
         </CartProvider>
       </body>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProductDetail } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
+import { getHeaderUser } from "@/lib/auth/header-user";
 
 export default async function ProductDetailPage({
   params,
@@ -8,7 +9,10 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>;
 }>) {
   const { id } = await params;
-  const product = await getProductDetail(id);
+  const [product, user] = await Promise.all([
+    getProductDetail(id),
+    getHeaderUser(),
+  ]);
 
   if (!product) {
     return (
@@ -131,10 +135,13 @@ export default async function ProductDetailPage({
               sellerName={product.sellers?.store_name ?? "Local Seller"}
               imageUrl={product.image_url}
               size="md"
+              userRole={user?.role}
             />
-            <p className="text-[11px] text-muted-foreground text-center">
-              Flat ₱50 delivery fee applied per local merchant
-            </p>
+            {user?.role !== "seller" && user?.role !== "admin" && (
+              <p className="text-[11px] text-muted-foreground text-center">
+                Flat ₱50 delivery fee applied per local merchant
+              </p>
+            )}
           </div>
         </div>
       </div>

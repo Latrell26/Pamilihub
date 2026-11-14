@@ -12,6 +12,8 @@ type AddToCartButtonProps = {
   sellerName: string;
   imageUrl: string | null;
   size?: "sm" | "md";
+  /** Current user role — hides button for seller & admin. Defaults to customer. */
+  userRole?: string | null;
 };
 
 export function AddToCartButton({
@@ -23,9 +25,15 @@ export function AddToCartButton({
   sellerName,
   imageUrl,
   size = "md",
+  userRole,
 }: AddToCartButtonProps) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
+
+  // Sellers and admins should not see the Add to Cart button
+  if (userRole === "seller" || userRole === "admin") {
+    return null;
+  }
 
   if (stock === 0) {
     return (

@@ -210,6 +210,7 @@ export default async function HomePage() {
                         sellerName={product.sellers?.store_name ?? "Local Seller"}
                         imageUrl={product.image_url}
                         size="sm"
+                        userRole={user?.role}
                       />
                     </div>
                   </div>

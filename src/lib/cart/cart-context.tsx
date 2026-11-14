@@ -26,12 +26,17 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const STORAGE_KEY = "pamilihub_cart";
+const STORAGE_KEY_PREFIX = "pamilihub_cart";
 
-function loadCart(): CartItem[] {
+/** Build the per-user localStorage key. Guests share a single anonymous key. */
+function storageKey(userId: string | null): string {
+  return userId ? `${STORAGE_KEY_PREFIX}_${userId}` : STORAGE_KEY_PREFIX;
+}
+
+function loadCart(userId: string | null): CartItem[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(userId));
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -39,23 +44,31 @@ function loadCart(): CartItem[] {
   }
 }
 
-function saveCart(items: CartItem[]) {
+function saveCart(userId: string | null, items: CartItem[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(storageKey(userId), JSON.stringify(items));
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({
+  userId,
+  children,
+}: {
+  /** auth user id – null for guests */
+  userId: string | null;
+  children: React.ReactNode;
+}) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Reload cart whenever the signed-in user changes
   useEffect(() => {
-    setItems(loadCart());
+    setItems(loadCart(userId));
     setIsLoaded(true);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
-    if (isLoaded) saveCart(items);
-  }, [items, isLoaded]);
+    if (isLoaded) saveCart(userId, items);
+  }, [items, isLoaded, userId]);
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
