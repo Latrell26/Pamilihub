@@ -41,7 +41,7 @@ export default async function RootLayout({
           <div className="flex-1 pb-20 md:pb-8">
             {children}
           </div>
-          {user?.role !== "seller" && user?.role !== "admin" && <FloatingCartBar />}
+          {user?.role === "customer" && <FloatingCartBar />}
           <MobileBottomNav user={user} />
         </CartProvider>
       </body>

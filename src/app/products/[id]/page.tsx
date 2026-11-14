@@ -126,22 +126,31 @@ export default async function ProductDetailPage({
 
           {/* Action button */}
           <div className="space-y-2 pt-2">
-            <AddToCartButton
-              productId={product.id}
-              name={product.name}
-              price={Number(product.price)}
-              stock={product.stock}
-              sellerId={product.seller_id}
-              sellerName={product.sellers?.store_name ?? "Local Seller"}
-              imageUrl={product.image_url}
-              size="md"
-              userRole={user?.role}
-            />
-            {user?.role !== "seller" && user?.role !== "admin" && (
-              <p className="text-[11px] text-muted-foreground text-center">
-                Flat ₱50 delivery fee applied per local merchant
-              </p>
-            )}
+            {user?.role === "customer" ? (
+              <>
+                <AddToCartButton
+                  productId={product.id}
+                  name={product.name}
+                  price={Number(product.price)}
+                  stock={product.stock}
+                  sellerId={product.seller_id}
+                  sellerName={product.sellers?.store_name ?? "Local Seller"}
+                  imageUrl={product.image_url}
+                  size="md"
+                  userRole={user?.role}
+                />
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Flat ₱50 delivery fee applied per local merchant
+                </p>
+              </>
+            ) : !user ? (
+              <Link
+                href="/login"
+                className="w-full py-2.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all text-center"
+              >
+                Sign in to Order
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

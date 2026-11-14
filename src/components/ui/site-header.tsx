@@ -94,8 +94,8 @@ export default function SiteHeader({
 
         {/* Right side actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Cart Icon Button - only for customers and guests */}
-          {user?.role !== "seller" && user?.role !== "admin" && (
+          {/* Cart Icon Button - only for authenticated customers */}
+          {user?.role === "customer" && (
             <Link
               href="/cart"
               className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"

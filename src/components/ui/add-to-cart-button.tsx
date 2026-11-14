@@ -30,8 +30,8 @@ export function AddToCartButton({
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
-  // Sellers and admins should not see the Add to Cart button
-  if (userRole === "seller" || userRole === "admin") {
+  // Only authenticated customers can see and use the Add to Cart button
+  if (userRole !== "customer") {
     return null;
   }
 
