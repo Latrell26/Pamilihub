@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { loginAction } from "@/modules/accounts/actions";
 
 export default function LoginPage() {
@@ -21,65 +22,94 @@ export default function LoginPage() {
       router.push("/dashboard");
       router.refresh();
     } else {
-      setError(result.message || "Login failed.");
+      setError(result.message || "Invalid email or password.");
     }
 
     setLoading(false);
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
-      <h1 className="text-2xl font-bold text-center">Sign in</h1>
-      <p className="text-center text-muted-foreground">
-        Welcome back to Pamilihub
-      </p>
+    <div className="space-y-6">
+      <div className="space-y-1 text-center">
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Welcome back</h1>
+        <p className="text-xs text-muted-foreground">
+          Enter your credentials to access your account
+        </p>
+      </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
-          {error}
+        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-start gap-2 animate-in fade-in-50">
+          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
+
       {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 animate-in fade-in-50">
           {message}
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Email</label>
+      <form action={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+            Email address
+          </label>
           <input
             type="email"
             name="email"
             required
-            className="mt-1 block w-full rounded-md border input bg-background text-foreground"
-            placeholder="you@example.com"
+            autoComplete="email"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            placeholder="juan@example.com"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium">Password</label>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+              Password
+            </label>
+          </div>
           <input
             type="password"
             name="password"
             required
-            className="mt-1 block w-full rounded-md border input bg-background text-foreground"
+            autoComplete="current-password"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            placeholder="••••••••"
           />
         </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-70"
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-60 transition-all cursor-pointer"
         >
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? (
+            <>
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>Signing in...</span>
+            </>
+          ) : (
+            "Sign In"
+          )}
         </button>
-      </div>
+      </form>
 
-      <p className="text-center text-sm">
-        Don&#39;t have an account?{" "}
-        <a href="/register" className="font-semibold underline">
-          Create one
-        </a>
-      </p>
-    </form>
+      <div className="pt-2 border-t border-border/60 text-center">
+        <p className="text-xs text-muted-foreground">
+          Don&#39;t have an account yet?{" "}
+          <Link href="/register" className="font-semibold text-foreground hover:underline">
+            Create an account
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { updateProfileAction } from "@/modules/accounts/actions";
+import { updateProfileAction, signoutAction } from "@/modules/accounts/actions";
 import { getSellerStatus } from "@/modules/accounts/queries";
 
 export default function ProfilePage() {
@@ -50,7 +50,6 @@ export default function ProfilePage() {
       address: data.address || "",
     });
 
-    // Load seller status
     try {
       const seller = await getSellerStatus();
       setSellerStatus(seller);
@@ -76,7 +75,7 @@ export default function ProfilePage() {
       setMessage(result.message);
       await loadProfile();
     } else {
-      setError(result.message || "Update failed.");
+      setError(result.message || "Failed to update profile.");
     }
 
     setSaving(false);
@@ -84,170 +83,230 @@ export default function ProfilePage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-muted-foreground">Loading profile...</div>
+      <div className="min-h-[50vh] flex items-center justify-center p-6">
+        <div className="text-sm text-muted-foreground animate-pulse">Loading profile...</div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-muted-foreground">
-          Not signed in.{" "}
-          <Link href="/login" className="font-semibold underline">
-            Sign in
-          </Link>
-        </div>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <h1 className="text-lg font-bold text-foreground">Sign In Required</h1>
+        <p className="text-xs text-muted-foreground">Please sign in to access your profile settings.</p>
+        <Link href="/login" className="inline-block px-5 py-2.5 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow">
+          Sign In
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Profile</h1>
-        <p className="text-muted-foreground">
-          Manage your account details
-        </p>
-      </div>
-
-      <div className="rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Role
-          </span>
-          <span className="text-sm">{profile.role}</span>
-        </div>
-        <div className="grid gap-2 mb-4">
-          <div>
-            <label className="text-sm font-medium block">ID</label>
-            <p className="text-muted-foreground truncate">{profile.id}</p>
+    <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5">
+      {/* User Card Header (Food app account header) */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground font-black flex items-center justify-center text-xl shadow-md shadow-primary/20 uppercase shrink-0">
+            {profile.full_name ? profile.full_name[0] : profile.role[0]}
+          </div>
+          <div className="space-y-0.5 min-w-0">
+            <h1 className="font-extrabold text-foreground text-base sm:text-lg truncate">
+              {formData.full_name || "Pamilihub User"}
+            </h1>
+            <p className="text-xs text-muted-foreground truncate">
+              {profile.id.slice(0, 16)}...
+            </p>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-primary/10 text-primary">
+              {profile.role} account
+            </span>
           </div>
         </div>
+
+        <form action={signoutAction}>
+          <button
+            type="submit"
+            className="px-3 py-1.5 rounded-xl border border-border text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
 
-      <form action={handleSubmit} className="space-y-4">
-        <h2 className="text-lg font-semibold">Edit details</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Full name</label>
+      {error && (
+        <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-700">
+          {error}
+        </div>
+      )}
+
+      {message && (
+        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800">
+          {message}
+        </div>
+      )}
+
+      {/* Quick Nav Links for mobile user (Foodpanda style account navigation) */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm divide-y divide-border">
+        <Link
+          href="/orders"
+          className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">📦</span>
+            <div>
+              <p className="font-bold text-xs sm:text-sm text-foreground">My Orders</p>
+              <p className="text-[11px] text-muted-foreground">View status of active & past food orders</p>
+            </div>
+          </div>
+          <span className="text-muted-foreground text-xs">→</span>
+        </Link>
+
+        <Link
+          href="/cart"
+          className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">🛍️</span>
+            <div>
+              <p className="font-bold text-xs sm:text-sm text-foreground">Shopping Basket</p>
+              <p className="text-[11px] text-muted-foreground">Manage delicacies chosen for checkout</p>
+            </div>
+          </div>
+          <span className="text-muted-foreground text-xs">→</span>
+        </Link>
+      </div>
+
+      {/* Profile Form Card */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <span className="text-base">👤</span>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+            Contact & Delivery Details
+          </h2>
+        </div>
+
+        <form action={handleSubmit} className="space-y-3.5">
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Full Name
+            </label>
             <input
               type="text"
               name="full_name"
               defaultValue={formData.full_name}
-              className="block w-full rounded-md border input bg-background text-foreground"
+              required
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium">Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              defaultValue={formData.phone}
-              className="block w-full rounded-md border input bg-background text-foreground"
-            />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Contact Phone
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                defaultValue={formData.phone}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                placeholder="0912 345 6789"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                San Pablo Delivery Address
+              </label>
+              <input
+                type="text"
+                name="address"
+                defaultValue={formData.address}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                placeholder="Brgy. San Rafael, San Pablo City"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium">Address</label>
-            <input
-              type="text"
-              name="address"
-              defaultValue={formData.address}
-              className="block w-full rounded-md border input bg-background text-foreground"
-            />
-          </div>
+
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-70"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-60 transition-all cursor-pointer active:scale-95"
           >
-            {saving ? "Saving..." : "Save changes"}
+            {saving ? "Saving Changes..." : "Save Details"}
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
-      {/* Seller account card */}
+      {/* Seller Application Card */}
       {profile.role !== "admin" && (
-        <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold mb-2">Seller account</h2>
-        {sellerStatus ? (
-          sellerStatus.status === "pending" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Your seller application is under review.
-              </p>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                Pending
-              </span>
-              <p className="text-sm text-muted-foreground">
-                An admin will review your application. You will be notified once
-                approved.
-              </p>
-            </div>
-          ) : sellerStatus.status === "approved" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                You&apos;re an approved seller. You can now list products.
-              </p>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                Approved
-              </span>
-              <Link
-                href="/seller/products"
-                className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
-              >
-                Manage products
-              </Link>
-            </div>
-          ) : sellerStatus.status === "rejected" ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Your seller application was not approved.
-              </p>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/20">
-                Rejected
-              </span>
-              <p className="text-sm text-muted-foreground">
-                You may reapply if you&apos;d like to try again.
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-3.5">
+          <div className="flex items-center gap-2 pb-2 border-b border-border">
+            <span className="text-base">🏪</span>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+              Food Merchant Portal
+            </h2>
+          </div>
+
+          {sellerStatus ? (
+            sellerStatus.status === "pending" ? (
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-foreground">{sellerStatus.store_name}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    Application Under Review
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Your merchant store application is being reviewed by the platform administrator.
+                </p>
+              </div>
+            ) : sellerStatus.status === "approved" ? (
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-foreground">{sellerStatus.store_name}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    Verified Seller
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link
+                    href="/seller/products"
+                    className="px-4 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 transition-all"
+                  >
+                    Inventory
+                  </Link>
+                  <Link
+                    href="/seller/orders"
+                    className="px-4 py-2 rounded-xl border border-border bg-background text-xs font-bold text-foreground hover:bg-muted transition-colors"
+                  >
+                    Manage Orders
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs">
+                <p className="text-muted-foreground">Previous application was rejected.</p>
+                <Link
+                  href="/apply"
+                  className="inline-block px-4 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow"
+                >
+                  Reapply Now
+                </Link>
+              </div>
+            )
+          ) : (
+            <div className="space-y-2.5 text-xs">
+              <p className="text-muted-foreground leading-relaxed">
+                Are you a local producer of buko pie, espasol, kakanin, or Laguna coffee? Join as a verified merchant.
               </p>
               <Link
                 href="/apply"
-                className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 transition-all active:scale-95"
               >
-                Reapply
+                <span>Become a Food Seller</span>
+                <span>→</span>
               </Link>
             </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Unknown status: {sellerStatus.status}
-            </div>
-          )
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Want to sell your products on Pamilihub? Apply to become a
-              seller.
-            </p>
-            <Link
-              href="/apply"
-              className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
-            >
-              Apply to sell
-            </Link>
-          </div>
-        )}
-      </div>
-      )}
-
-      {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
-          {message}
+          )}
         </div>
       )}
     </div>

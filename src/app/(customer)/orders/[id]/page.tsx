@@ -1,6 +1,38 @@
 import Link from "next/link";
 import { getOrderById } from "@/modules/orders/queries";
 import { getHeaderUser } from "@/lib/auth/header-user";
+import { OrderStatusBadge, PaymentBadge } from "@/components/seller/orders/StatusBadge";
+import type { OrderStatus, PaymentStatus, PaymentMethod } from "@/modules/orders/types";
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("fil-PH", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
+}
+
+const TIMELINE_STEPS: OrderStatus[] = [
+  "pending",
+  "accepted",
+  "preparing",
+  "delivering",
+  "completed",
+];
+
+const STEP_LABELS: Record<OrderStatus, string> = {
+  pending: "Order Placed",
+  accepted: "Accepted",
+  preparing: "Preparing",
+  delivering: "Out for Delivery",
+  completed: "Delivered",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
 
 export default async function OrderDetailPage({
   params,
@@ -10,19 +42,12 @@ export default async function OrderDetailPage({
   const user = await getHeaderUser();
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Not signed in</h1>
-          <p className="mt-4 text-muted-foreground">
-            Please sign in to view your order.
-          </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Sign in
-          </Link>
-        </div>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <h1 className="text-xl font-bold text-foreground">Sign in required</h1>
+        <p className="text-xs text-muted-foreground">Please sign in to view your order details.</p>
+        <Link href="/login" className="inline-block px-5 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow">
+          Sign In
+        </Link>
       </div>
     );
   }
@@ -31,42 +56,27 @@ export default async function OrderDetailPage({
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Order not found</h1>
-          <p className="mt-4 text-muted-foreground">
-            We couldn’t find this order.
-          </p>
-          <Link
-            href="/orders"
-            className="mt-6 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Back to my orders
-          </Link>
-        </div>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <h1 className="text-xl font-bold text-foreground">Order not found</h1>
+        <p className="text-xs text-muted-foreground">We couldn&#39;t locate this order in our system.</p>
+        <Link href="/orders" className="inline-block px-5 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow">
+          Back to Orders
+        </Link>
       </div>
     );
   }
 
-  // Access control: customer sees own orders; seller sees own store's orders
+  // Access control
   const isOwner = order.customer_id === user.id;
-  const isSeller =
-    user.role === "seller" && order.sellerStoreName !== null;
+  const isSeller = user.role === "seller" && order.sellerStoreName !== null;
   if (!isOwner && user.role !== "admin" && !isSeller) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Not authorized</h1>
-          <p className="mt-4 text-muted-foreground">
-            You don’t have access to this order.
-          </p>
-          <Link
-            href="/orders"
-            className="mt-6 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Back to my orders
-          </Link>
-        </div>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <h1 className="text-xl font-bold text-foreground">Not authorized</h1>
+        <p className="text-xs text-muted-foreground">You don&#39;t have permission to view this order.</p>
+        <Link href="/orders" className="inline-block px-5 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow">
+          Back to Orders
+        </Link>
       </div>
     );
   }
@@ -76,170 +86,205 @@ export default async function OrderDetailPage({
     (acc, i) => acc + Number(i.unit_price) * i.quantity,
     0
   );
-
-  const canPay =
-    order.payment_method === "mockpay" && order.payment_status === "pending";
-
-  const statusColors: Record<string, string> = {
-    pending: "bg-muted/50 text-muted-foreground",
-    accepted: "bg-blue-100 text-blue-800",
-    preparing: "bg-amber-100 text-amber-800",
-    delivering: "bg-purple-100 text-purple-800",
-    completed: "bg-success/10 text-success",
-    rejected: "bg-destructive/10 text-destructive",
-    cancelled: "bg-destructive/10 text-destructive",
-  };
-
-  const paymentColors: Record<string, string> = {
-    pending: "bg-muted/50 text-muted-foreground",
-    paid: "bg-success/10 text-success",
-    failed: "bg-destructive/10 text-destructive",
-    cancelled: "bg-destructive/10 text-destructive",
-    refunded: "bg-blue-100 text-blue-800",
-  };
+  const canPay = order.payment_method === "mockpay" && order.payment_status === "pending";
+  const currentStatus = order.order_status as OrderStatus;
+  const isTerminal = currentStatus === "rejected" || currentStatus === "cancelled";
+  const currentIndex = TIMELINE_STEPS.indexOf(currentStatus);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {/* Top Navigation */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
-          <p className="text-muted-foreground text-sm">
-            Placed{" "}
-            {new Date(order.created_at).toLocaleDateString()}
-          </p>
+        <Link
+          href="/orders"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+        >
+          <span>← Back to My Orders</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <OrderStatusBadge status={currentStatus} size="md" />
+          <PaymentBadge
+            status={order.payment_status as PaymentStatus}
+            method={order.payment_method as PaymentMethod}
+            size="md"
+          />
         </div>
-        <div className="flex gap-2">
-          <span className={`text-xs px-2 py-1 rounded-full ${paymentColors[order.payment_status] || paymentColors.pending}`}>
-            Payment: {order.payment_status}
-          </span>
-          <span className={`text-xs px-2 py-1 rounded-full ${statusColors[order.order_status] || statusColors.pending}`}>
-            {order.order_status}
-          </span>
-        </div>
       </div>
 
-      {/* Seller */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-          Seller
-        </h2>
-        <p className="font-medium">{order.sellerStoreName}</p>
-      </div>
-
-      {/* Delivery information */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-          Delivery information
-        </h2>
-        <dl className="space-y-2 text-sm">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-            <dt className="text-muted-foreground">Name</dt>
-            <dd className="font-medium">{order.delivery_name}</dd>
-            <dt className="text-muted-foreground">Phone</dt>
-            <dd className="font-medium">{order.delivery_phone}</dd>
-            <dt className="text-muted-foreground">Address</dt>
-            <dd className="font-medium col-span-2">{order.delivery_address}</dd>
+      {/* Main Order Header */}
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
+              Order #{order.id.slice(0, 8).toUpperCase()}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Placed on {formatDate(order.created_at)}
+            </p>
           </div>
-        </dl>
-      </div>
-
-      {/* Items */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
-          Items
-        </h2>
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-2">Product</th>
-              <th className="text-right p-2">Qty</th>
-              <th className="text-right p-2">Unit price</th>
-              <th className="text-right p-2">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b">
-                <td className="p-2">
-                  <div className="flex items-center gap-3">
-                    {item.products?.image_url ? (
-                      <img
-                        src={item.products.image_url}
-                        alt={item.products.name}
-                        className="w-12 h-12 rounded object-cover border"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No image</span>
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-medium">{item.products?.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Stock: {item.quantity}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="text-right p-2 font-medium">{item.quantity}</td>
-                <td className="text-right p-2">
-                  ₱{Number(item.unit_price).toFixed(2)}
-                </td>
-                <td className="text-right p-2 font-medium">
-                  ₱{(Number(item.unit_price) * item.quantity).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Totals */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span>₱{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Delivery fee</span>
-            <span>₱{order.delivery_fee.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between font-semibold border-t pt-2">
-            <span>Total</span>
-            <span>₱{order.total.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            <span>Payment method</span>
-            <span>
-              {order.payment_method === "mockpay" ? "MockPay (simulated)" : "Cash on delivery"}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Seller:</span>
+            <span className="font-semibold text-foreground px-2.5 py-1 rounded-md bg-muted">
+              🏪 {order.sellerStoreName || "Local Seller"}
             </span>
           </div>
         </div>
+
+        {/* Status Timeline */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Order Status Progress
+          </h2>
+          {isTerminal ? (
+            <div
+              className={`p-3 rounded-xl border text-xs font-medium text-center ${
+                currentStatus === "rejected"
+                  ? "bg-red-50 text-red-800 border-red-200"
+                  : "bg-gray-100 text-gray-700 border-gray-200"
+              }`}
+            >
+              Order has been {currentStatus === "rejected" ? "rejected by the seller" : "cancelled"}. Any stock has been restored.
+            </div>
+          ) : (
+            <div className="pt-2 pb-4">
+              <div className="flex items-center justify-between relative">
+                {TIMELINE_STEPS.map((step, idx) => {
+                  const done = currentIndex > idx;
+                  const active = currentIndex === idx;
+
+                  return (
+                    <div key={step} className="flex-1 flex flex-col items-center relative z-10">
+                      <div
+                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs transition-colors ${
+                          done
+                            ? "bg-emerald-600 border-emerald-600 text-white"
+                            : active
+                            ? "bg-primary border-primary text-primary-foreground ring-4 ring-primary/20"
+                            : "bg-card border-border text-muted-foreground"
+                        }`}
+                      >
+                        {done ? "✓" : idx + 1}
+                      </div>
+                      <span
+                        className={`text-[10px] sm:text-xs text-center mt-2 font-medium max-w-[70px] ${
+                          active ? "text-foreground font-bold" : "text-muted-foreground"
+                        }`}
+                      >
+                        {STEP_LABELS[step]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Pay now button (MockPay + pending only) */}
+      {/* Pay Now Banner (MockPay Pending) */}
       {canPay && (
-        <div className="rounded-lg border bg-card p-4">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-            Payment
-          </h2>
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="font-bold text-sm text-blue-900">Payment Awaiting Confirmation</h3>
+            <p className="text-xs text-blue-700">
+              This order is currently pending simulated payment. Click below to approve or cancel in MockPay.
+            </p>
+          </div>
           <Link
             href={`/orders/${order.id}/pay`}
-            className="inline-block rounded-md bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+            className="px-6 py-2.5 rounded-lg bg-blue-600 text-xs font-bold text-white shadow hover:bg-blue-700 transition-all text-center shrink-0"
           >
-            Pay now (MockPay)
+            Launch MockPay (₱{Number(order.total).toFixed(2)})
           </Link>
         </div>
       )}
 
-      <div className="mt-4">
-        <Link
-          href="/orders"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← Back to my orders
-        </Link>
+      {/* Items & Delivery Info Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* Left (2 cols): Ordered Items */}
+        <div className="md:col-span-2 rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-border bg-muted/20">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Ordered Delicacies ({items.length})
+            </h2>
+          </div>
+          <div className="divide-y divide-border">
+            {items.map((item) => (
+              <div key={item.id} className="p-4 sm:p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {item.products?.image_url ? (
+                    <img
+                      src={item.products.image_url}
+                      alt={item.products.name}
+                      className="w-14 h-14 rounded-xl object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-muted/60 border border-border flex items-center justify-center text-lg">
+                      🥧
+                    </div>
+                  )}
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-sm text-foreground">
+                      {item.products?.name ?? "Delicacy"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Quantity: {item.quantity} × ₱{Number(item.unit_price).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                <span className="font-bold text-sm text-foreground">
+                  ₱{(Number(item.unit_price) * item.quantity).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-5 bg-muted/10 border-t border-border space-y-2 text-xs">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Items Subtotal</span>
+              <span>₱{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Flat Delivery Fee</span>
+              <span>₱{Number(order.delivery_fee).toFixed(2)}</span>
+            </div>
+            <div className="pt-2 border-t border-border flex justify-between text-sm font-bold text-foreground">
+              <span>Total</span>
+              <span className="text-base font-extrabold">₱{Number(order.total).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right (1 col): Delivery Address & Customer Info */}
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground pb-2 border-b border-border">
+            Delivery Information
+          </h2>
+          <div className="space-y-3 text-xs">
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Recipient</span>
+              <span className="font-semibold text-foreground text-sm">{order.delivery_name}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Contact Number</span>
+              <a href={`tel:${order.delivery_phone}`} className="font-medium text-foreground hover:underline">
+                📞 {order.delivery_phone}
+              </a>
+            </div>
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Delivery Address</span>
+              <span className="font-medium text-foreground leading-relaxed block mt-0.5">
+                📍 {order.delivery_address}
+              </span>
+            </div>
+            <div className="pt-2 border-t border-border">
+              <span className="text-muted-foreground block text-[11px]">Payment Method</span>
+              <span className="font-semibold text-foreground uppercase tracking-wide">
+                {order.payment_method === "mockpay" ? "MockPay (Simulated)" : "Cash on Delivery"}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

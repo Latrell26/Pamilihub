@@ -107,14 +107,6 @@ export default function SellerProductsPage() {
     loadProducts();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-muted-foreground">Loading products...</div>
-      </div>
-    );
-  }
-
   const startEdit = (p: Product) => {
     setEditingId(p.id);
     setEditCat(p.category_id);
@@ -125,48 +117,88 @@ export default function SellerProductsPage() {
     setRemoveImage(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center p-6">
+        <div className="text-sm text-muted-foreground animate-pulse">Loading merchant products...</div>
+      </div>
+    );
+  }
+
+  const inStockCount = products.filter((p) => p.stock > 0).length;
+  const outOfStockCount = products.filter((p) => p.stock === 0).length;
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">My Products</h1>
-        <p className="text-muted-foreground">
-          Manage your store&#39;s product listings
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span>Merchant Store</span>
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Product Listings</h1>
+          <p className="text-xs text-muted-foreground">
+            Manage your local delicacies, prices, inventory stock, and photos
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setAdding(!adding)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all self-start sm:self-auto cursor-pointer"
+        >
+          <span>{adding ? "✕ Close Form" : "+ Add New Delicacy"}</span>
+        </button>
+      </div>
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <span className="text-xs text-muted-foreground">Total Listings</span>
+          <p className="text-2xl font-extrabold text-foreground mt-1">{products.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <span className="text-xs text-emerald-700 font-medium">In Stock</span>
+          <p className="text-2xl font-extrabold text-emerald-700 mt-1">{inStockCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <span className="text-xs text-red-600 font-medium">Out of Stock</span>
+          <p className="text-2xl font-extrabold text-red-600 mt-1">{outOfStockCount}</p>
+        </div>
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700">
           {error}
         </div>
       )}
       {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800">
           {message}
         </div>
       )}
 
-      {/* Add product form */}
-      <div className="rounded-lg border bg-card p-4">
-        <button
-          type="button"
-          onClick={() => setAdding(!adding)}
-          className="w-full flex items-center justify-center gap-2 text-sm font-medium text-primary hover:text-primary/90 mb-4"
-        >
-          {adding ? "Hide" : "+"} Add product
-        </button>
+      {/* Add Product Collapsible Panel */}
+      {adding && (
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
+            <h2 className="text-sm font-bold text-foreground">Add New Food Product</h2>
+            <span className="text-xs text-muted-foreground">Will appear in public catalog immediately</span>
+          </div>
 
-        {adding && (
-          <form action={handleCreate} className="space-y-4 mt-4">
+          <form action={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium">Category</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Category <span className="text-red-500">*</span>
+                </label>
                 <select
                   name="category_id"
                   defaultValue={newCat}
                   required
-                  className="block w-full rounded-md border input bg-background text-foreground"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 >
-                  <option value="">Select a category</option>
+                  <option value="">Select category</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -174,27 +206,38 @@ export default function SellerProductsPage() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium">Product name</label>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Product Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   name="name"
                   defaultValue={newName}
                   required
-                  className="block w-full rounded-md border input bg-background text-foreground"
+                  placeholder="e.g. Special Buko Pie (Box of 8)"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 />
               </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium">Description</label>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Description
+                </label>
                 <textarea
                   name="description"
                   defaultValue={newDesc}
                   rows={2}
-                  className="block w-full rounded-md border input bg-background text-foreground"
+                  placeholder="Ingredients, shelf-life, package size..."
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium">Price (₱)</label>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Price (₱) <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
                   name="price"
@@ -202,167 +245,264 @@ export default function SellerProductsPage() {
                   required
                   min="0"
                   step="0.01"
-                  className="block w-full rounded-md border input bg-background text-foreground"
+                  placeholder="250.00"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium">Stock</label>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Stock Quantity <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
                   name="stock"
                   defaultValue={newStock}
                   required
                   min="0"
-                  className="block w-full rounded-md border input bg-background text-foreground"
+                  placeholder="20"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 />
               </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium">Product image</label>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="block text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Photo Upload
+                </label>
                 <input
                   type="file"
                   name="image"
                   accept="image/*"
-                  className="block w-full text-sm text-muted-foreground"
+                  className="block w-full text-xs text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
                 />
               </div>
             </div>
-            <button
-              type="submit"
-              className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-            >
-              Add product
-            </button>
-          </form>
-        )}
-      </div>
 
-      {/* Product list */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold mb-4">Your products</h2>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-all cursor-pointer"
+              >
+                Save Delicacy Listing
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdding(false)}
+                className="px-4 py-2.5 rounded-lg border border-border bg-background text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Products Table Card */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-border bg-muted/20">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Current Inventory ({products.length})
+          </h2>
+        </div>
+
         {products.length === 0 ? (
-          <p className="text-muted-foreground">No products yet. Add your first product above.</p>
+          <div className="p-12 text-center space-y-3">
+            <span className="text-3xl block">📦</span>
+            <p className="text-sm font-semibold text-foreground">No delicacies listed yet</p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              Click &quot;Add New Delicacy&quot; above to list your first buko pie, espasol, or local food item.
+            </p>
+          </div>
         ) : (
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2">Image</th>
-                <th className="text-left p-2">Name</th>
-                <th className="text-right p-2">Price</th>
-                <th className="text-right p-2">Stock</th>
-                <th className="text-right p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => {
-                const isEditing = editingId === p.id;
-                if (isEditing) {
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/40 border-b border-border text-xs text-muted-foreground">
+                  <th className="text-left px-5 py-3 font-semibold w-20">Photo</th>
+                  <th className="text-left px-5 py-3 font-semibold">Delicacy Name</th>
+                  <th className="text-right px-5 py-3 font-semibold">Price</th>
+                  <th className="text-right px-5 py-3 font-semibold">Stock</th>
+                  <th className="text-right px-5 py-3 font-semibold w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {products.map((p) => {
+                  const isEditing = editingId === p.id;
+
+                  if (isEditing) {
+                    return (
+                      <tr key={p.id} className="bg-muted/20">
+                        <td colSpan={5} className="p-5">
+                          <form action={handleUpdate} className="space-y-4">
+                            <input type="hidden" name="id" value={p.id} />
+                            <div className="flex items-center justify-between pb-2 border-b border-border">
+                              <span className="font-bold text-xs uppercase tracking-wider text-foreground">
+                                Edit Delicacy #{p.id.slice(0, 8)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingId(null)}
+                                className="text-xs text-muted-foreground hover:text-foreground"
+                              >
+                                ✕ Close
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                                  Category
+                                </label>
+                                <select
+                                  name="category_id"
+                                  defaultValue={editCat}
+                                  required
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs"
+                                >
+                                  {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="sm:col-span-2">
+                                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                                  Name
+                                </label>
+                                <input
+                                  name="name"
+                                  defaultValue={editName}
+                                  required
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                                  Price (₱)
+                                </label>
+                                <input
+                                  name="price"
+                                  defaultValue={editPrice}
+                                  required
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-3">
+                                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                                  Description
+                                </label>
+                                <textarea
+                                  name="description"
+                                  defaultValue={editDesc}
+                                  rows={2}
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                                  Stock
+                                </label>
+                                <input
+                                  name="stock"
+                                  defaultValue={editStock}
+                                  required
+                                  type="number"
+                                  min="0"
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-4 flex flex-wrap items-center gap-3 pt-2">
+                                <input
+                                  type="file"
+                                  name="image"
+                                  accept="image/*"
+                                  className="text-xs"
+                                />
+                                <input
+                                  type="hidden"
+                                  name="remove_image"
+                                  value={removeImage ? "true" : "false"}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setRemoveImage((prev) => !prev)}
+                                  className="text-xs text-red-600 hover:underline"
+                                >
+                                  {removeImage ? "Keep existing photo" : "Remove photo"}
+                                </button>
+                                <div className="ml-auto flex gap-2">
+                                  <button
+                                    type="submit"
+                                    className="px-4 py-1.5 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow hover:bg-emerald-700"
+                                  >
+                                    Save Changes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingId(null)}
+                                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground hover:bg-muted"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </form>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  const inStock = p.stock > 0;
+
                   return (
-                    <tr key={p.id} className="border-b">
-                      <td className="p-2">
+                    <tr key={p.id} className="hover:bg-muted/10 transition-colors">
+                      <td className="px-5 py-3">
                         {p.image_url ? (
                           <img
                             src={p.image_url}
                             alt={p.name}
-                            className="w-16 h-16 rounded object-cover border"
+                            className="w-12 h-12 rounded-lg object-cover border border-border"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
-                            <span className="text-xs text-muted-foreground">No image</span>
+                          <div className="w-12 h-12 rounded-lg bg-muted/60 border border-border flex items-center justify-center text-sm">
+                            🍲
                           </div>
                         )}
                       </td>
-                      <td className="p-2">
-                        <form action={handleUpdate} className="flex flex-col sm:flex-row gap-2">
-                          <input type="hidden" name="id" value={p.id} />
-                          <select
-                            name="category_id"
-                            defaultValue={editCat}
-                            required
-                            className="rounded-md border input bg-background text-foreground text-sm"
-                          >
-                            <option value="">Select a category</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            name="name"
-                            defaultValue={editName}
-                            required
-                            className="rounded-md border input bg-background text-foreground text-sm flex-1"
-                          />
-                          <textarea
-                            name="description"
-                            defaultValue={editDesc}
-                            rows={2}
-                            className="rounded-md border input bg-background text-foreground text-sm flex-1 mb-2 sm:mb-0"
-                          />
-                          <input
-                            name="price"
-                            defaultValue={editPrice}
-                            required
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="rounded-md border input bg-background text-foreground text-sm w-20"
-                          />
-                          <input
-                            name="stock"
-                            defaultValue={editStock}
-                            required
-                            type="number"
-                            min="0"
-                            className="rounded-md border input bg-background text-foreground text-sm w-16"
-                          />
-                          <input
-                            type="file"
-                            name="image"
-                            accept="image/*"
-                            className="text-xs"
-                          />
-                          <input
-                            type="hidden"
-                            name="remove_image"
-                            value={removeImage ? "true" : "false"}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setRemoveImage((prev) => !prev)}
-                            className={`text-xs font-medium hover:underline ml-2 ${
-                              removeImage ? "text-destructive" : "text-destructive/60"
-                            }`}
-                          >
-                            {removeImage ? "Keep image" : "Remove image"}
-                          </button>
-                          <button
-                            type="submit"
-                            className="rounded-md border border-transparent bg-success px-3 py-1 text-xs font-semibold text-success-foreground shadow hover:bg-success/90"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="rounded-md border border-transparent bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground shadow hover:bg-muted/80"
-                          >
-                            Cancel
-                          </button>
-                        </form>
+                      <td className="px-5 py-3">
+                        <p className="font-semibold text-foreground text-sm">{p.name}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {p.description || "No description provided."}
+                        </p>
                       </td>
-                      <td className="p-2 text-right">₱{Number(p.price).toFixed(2)}</td>
-                      <td className="p-2 text-right">
-                        {p.stock === 0 ? (
-                          <span className="text-destructive">0</span>
-                        ) : (
-                          p.stock
-                        )}
+                      <td className="px-5 py-3 text-right font-bold text-foreground">
+                        ₱{Number(p.price).toFixed(2)}
                       </td>
-                      <td className="p-2 text-right space-x-2">
+                      <td className="px-5 py-3 text-right">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            inStock
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {inStock ? `${p.stock} in stock` : "0 (Sold Out)"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right space-x-2">
                         <button
                           onClick={() => startEdit(p)}
-                          className="text-xs font-medium text-primary hover:underline"
+                          className="px-2.5 py-1 rounded-md text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
                         >
                           Edit
                         </button>
@@ -370,9 +510,11 @@ export default function SellerProductsPage() {
                           <input type="hidden" name="id" value={p.id} />
                           <button
                             type="submit"
-                            className="text-xs font-medium text-destructive hover:underline"
+                            className="px-2.5 py-1 rounded-md text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
                             onClick={(e) => {
-                              if (!confirm("Delete this product?")) e.preventDefault();
+                              if (!confirm("Are you sure you want to delete this listing?")) {
+                                e.preventDefault();
+                              }
                             }}
                           >
                             Delete
@@ -381,57 +523,10 @@ export default function SellerProductsPage() {
                       </td>
                     </tr>
                   );
-                }
-
-                return (
-                  <tr key={p.id} className="border-b">
-                    <td className="p-2">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt={p.name}
-                          className="w-16 h-16 rounded object-cover border"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">No image</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-2">{p.name}</td>
-                    <td className="p-2 text-right">₱{Number(p.price).toFixed(2)}</td>
-                    <td className="p-2 text-right">
-                      {p.stock === 0 ? (
-                        <span className="text-destructive">0</span>
-                      ) : (
-                        p.stock
-                      )}
-                    </td>
-                    <td className="p-2 text-right space-x-2">
-                      <button
-                        onClick={() => startEdit(p)}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <form action={handleDelete} className="inline">
-                        <input type="hidden" name="id" value={p.id} />
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-destructive hover:underline"
-                          onClick={(e) => {
-                            if (!confirm("Delete this product?")) e.preventDefault();
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

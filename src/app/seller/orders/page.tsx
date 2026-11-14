@@ -1,288 +1,162 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getSellerOrders } from "@/modules/orders/queries";
-import { updateOrderStatusAction } from "@/modules/orders/actions";
-
-type OrderItem = {
-  id: string;
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-  products: {
-    name: string;
-    image_url: string | null;
-  } | null;
-};
-
-type OrderWithItems = {
-  id: string;
-  customer_id: string;
-  seller_id: string;
-  sellerStoreName: string | null;
-  delivery_name: string;
-  delivery_phone: string;
-  delivery_address: string;
-  delivery_fee: number;
-  total: number;
-  payment_method: string;
-  payment_status: string;
-  order_status: string;
-  created_at: string;
-  updated_at: string;
-  order_items: OrderItem[];
-};
+import { useState, useEffect, useCallback, useTransition } from "react";
+import type { OrderSummary, OrderDetail } from "@/modules/orders/types";
+import { getSellerOrdersListOnly, getSellerOrderById } from "@/modules/orders/queries";
+import { OrderList } from "@/components/seller/orders/OrderList";
+import { OrderDetailPanel } from "@/components/seller/orders/OrderDetailPanel";
 
 export default function SellerOrdersPage() {
-  const [orders, setOrders] = useState<OrderWithItems[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // ── List state ─────────────────────────────────────────────────────────────
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
-  async function loadOrders() {
-    setLoading(true);
-    try {
-      const data = await getSellerOrders();
-      setOrders(data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // ── Detail state ──────────────────────────────────────────────────────────
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<OrderDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  async function handleUpdateStatus(formData: FormData) {
-    setMessage("");
-    setError("");
-    const result = await updateOrderStatusAction(null, formData);
-    if (result.success) {
-      setMessage(result.message);
-      await loadOrders();
-    } else {
-      setError(result.message || "Failed to update status.");
-    }
-  }
+  // ── Mobile: show detail pane over list ───────────────────────────────────
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
-  useEffect(() => {
-    loadOrders();
+  // ── Load list ──────────────────────────────────────────────────────────────
+  const loadList = useCallback(async () => {
+    setListLoading(true);
+    const data = await getSellerOrdersListOnly();
+    setOrders(data ?? []);
+    setListLoading(false);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-muted-foreground">Loading orders...</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    loadList();
+  }, [loadList]);
 
-  const statusColors: Record<string, string> = {
-    pending: "bg-muted/50 text-muted-foreground",
-    accepted: "bg-blue-100 text-blue-800",
-    rejected: "bg-destructive/10 text-destructive",
-    preparing: "bg-amber-100 text-amber-800",
-    delivering: "bg-purple-100 text-purple-800",
-    completed: "bg-success/10 text-success",
-    cancelled: "bg-destructive/10 text-destructive",
-  };
+  // ── Load detail lazily when a row is selected ──────────────────────────────
+  const handleSelectOrder = useCallback(
+    async (id: string) => {
+      if (id === selectedId) return; // already selected
+      setSelectedId(id);
+      setDetail(null);
+      setDetailLoading(true);
+      setMobileShowDetail(true);
+      const data = await getSellerOrderById(id);
+      setDetail(data);
+      setDetailLoading(false);
+    },
+    [selectedId]
+  );
 
-  const paymentColors: Record<string, string> = {
-    pending: "bg-muted/50 text-muted-foreground",
-    paid: "bg-success/10 text-success",
-    failed: "bg-destructive/10 text-destructive",
-    cancelled: "bg-destructive/10 text-destructive",
-    refunded: "bg-blue-100 text-blue-800",
-  };
-
-  const getAllowedNextStatuses = (status: string): string[] => {
-    switch (status) {
-      case "pending":
-        return ["accepted", "rejected"];
-      case "accepted":
-        return ["preparing", "cancelled"];
-      case "preparing":
-        return ["delivering", "cancelled"];
-      case "delivering":
-        return ["completed", "cancelled"];
-      default:
-        return [];
+  // ── After an action (status update), reload list + re-fetch detail ─────────
+  const handleStatusUpdated = useCallback(async () => {
+    await loadList();
+    if (selectedId) {
+      setDetailLoading(true);
+      const data = await getSellerOrderById(selectedId);
+      setDetail(data);
+      setDetailLoading(false);
     }
+  }, [loadList, selectedId]);
+
+  // ── Mobile: close detail panel ─────────────────────────────────────────────
+  const handleCloseDetail = () => {
+    setMobileShowDetail(false);
+    setSelectedId(null);
+    setDetail(null);
   };
-
-  const statusLabel = (s: string) =>
-    s.charAt(0).toUpperCase() + s.slice(1);
-
-  const subtotal = (order: OrderWithItems) =>
-    order.order_items.reduce(
-      (acc, i) => acc + Number(i.unit_price) * i.quantity,
-      0
-    );
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">My Orders</h1>
-        <p className="text-muted-foreground">
-          Incoming orders for your store. Update status as you prepare and
-          deliver each order.
-        </p>
-      </div>
+    <div className="flex h-[calc(100vh-64px)]"> {/* subtract site-header height */}
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
-          {error}
+      {/* ── List pane ─────────────────────────────────────────────────────── */}
+      <aside
+        aria-label="Order list"
+        className={`
+          flex flex-col border-r border-border bg-background
+          w-full md:w-80 lg:w-96 shrink-0
+          ${mobileShowDetail ? "hidden md:flex" : "flex"}
+        `}
+      >
+        {/* Pane header */}
+        <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-border">
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground">My Orders</h1>
+            <p className="text-xs text-muted-foreground">
+              {listLoading ? "Loading…" : `${orders.length} order${orders.length !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+          <button
+            onClick={loadList}
+            aria-label="Refresh orders"
+            disabled={listLoading}
+            className="rounded-md p-2 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+          >
+            <svg
+              className={`h-4 w-4 text-muted-foreground ${listLoading ? "animate-spin" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
         </div>
-      )}
-      {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
-          {message}
-        </div>
-      )}
 
-      {orders.length === 0 ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
-          <p className="text-muted-foreground">No orders yet.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Orders from customers will appear here.
-          </p>
+        <OrderList
+          orders={orders}
+          loading={listLoading}
+          selectedId={selectedId}
+          onSelect={handleSelectOrder}
+          filter={filter}
+          onFilterChange={setFilter}
+          search={search}
+          onSearchChange={setSearch}
+        />
+      </aside>
+
+      {/* ── Detail pane ───────────────────────────────────────────────────── */}
+      <main
+        aria-label="Order detail"
+        className={`
+          flex-1 bg-background overflow-hidden
+          ${mobileShowDetail ? "flex flex-col" : "hidden md:flex md:flex-col"}
+        `}
+      >
+        {/* Mobile back button */}
+        <div className="md:hidden border-b border-border px-4 py-3 flex items-center gap-2">
+          <button
+            onClick={handleCloseDetail}
+            aria-label="Back to order list"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to orders
+          </button>
         </div>
-      ) : (
-        <div className="rounded-lg border bg-card p-4">
-          <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-2">Order</th>
-              <th className="text-left p-2">Customer</th>
-              <th className="text-right p-2">Total</th>
-              <th className="text-right p-2">Payment</th>
-              <th className="text-right p-2">Status</th>
-              <th className="text-right p-2">Date</th>
-              <th className="text-right p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.id} className="border-b">
-                <td className="p-2">
-                  <div className="font-medium">#{order.id.slice(0, 8)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    From {order.sellerStoreName}
-                  </div>
-                </td>
-                <td className="p-2">
-                  <div className="font-medium">{order.delivery_name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {order.delivery_phone}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {order.delivery_address}
-                  </div>
-                </td>
-                <td className="p-2 text-right font-medium">
-                  ₱{order.total.toFixed(2)}
-                </td>
-                <td className="p-2 text-right">
-                  <span className={`text-xs px-2 py-1 rounded-full ${paymentColors[order.payment_status] || paymentColors.pending}`}>
-                    {order.payment_method === "mockpay" ? "MockPay" : "COD"}
-                    {" · "}
-                    {order.payment_status}
-                  </span>
-                </td>
-                <td className="p-2 text-right">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[order.order_status] || statusColors.pending}`}>
-                    {statusLabel(order.order_status)}
-                  </span>
-                </td>
-                <td className="p-2 text-right text-muted-foreground">
-                  {new Date(order.created_at).toLocaleDateString()}
-                </td>
-                <td className="p-2 text-right space-x-1">
-                  {getAllowedNextStatuses(order.order_status).map((s) => (
-                    <form
-                      key={s}
-                      action={handleUpdateStatus}
-                      className="inline"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        setUpdatingId(order.id);
-                      }}
-                    >
-                      <input type="hidden" name="order_id" value={order.id} />
-                      <input type="hidden" name="new_status" value={s} />
-                      <button
-                        type="submit"
-                        disabled={updatingId === order.id}
-                        className={`text-xs font-medium px-2 py-1 rounded hover:bg-muted/50 ${
-                          s === "rejected" || s === "cancelled"
-                            ? "text-destructive hover:bg-destructive/10"
-                            : "text-primary hover:bg-primary/10"
-                        }`}
-                      >
-                        {statusLabel(s)}
-                      </button>
-                    </form>
-                  ))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      )}
-      
-      {/* Order items detail (expandable per order) */}
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="mt-4 rounded-lg border bg-card p-4"
-        >
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
-            Order #{order.id.slice(0, 8)} — Items
-          </h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2">Product</th>
-                <th className="text-right p-2">Qty</th>
-                <th className="text-right p-2">Unit Price</th>
-                <th className="text-right p-2">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.order_items.map((item) => (
-                <tr key={item.id} className="border-b">
-                  <td className="p-2 font-medium">
-                    {item.products?.name}
-                  </td>
-                  <td className="p-2 text-right">{item.quantity}</td>
-                  <td className="p-2 text-right">
-                    ₱{Number(item.unit_price).toFixed(2)}
-                  </td>
-                  <td className="p-2 text-right font-medium">
-                    ₱{(Number(item.unit_price) * item.quantity).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-              <tr className="border-t font-bold pt-2">
-                <td className="p-2 text-right col-span-3">Order subtotal</td>
-                <td className="p-2 text-right">
-                  ₱{subtotal(order).toFixed(2)}
-                </td>
-              </tr>
-              <tr className="border-t font-bold pt-2">
-                <td className="p-2 text-right col-span-3">Delivery fee</td>
-                <td className="p-2 text-right">
-                  ₱{order.delivery_fee.toFixed(2)}
-                </td>
-              </tr>
-              <tr className="border-t font-bold pt-2">
-                <td className="p-2 text-right col-span-3">Total</td>
-                <td className="p-2 text-right">
-                  ₱{order.total.toFixed(2)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ))}
+
+        <OrderDetailPanel
+          order={detail}
+          loading={detailLoading}
+          onStatusUpdated={handleStatusUpdated}
+          onClose={selectedId ? handleCloseDetail : undefined}
+        />
+      </main>
     </div>
   );
 }

@@ -57,7 +57,7 @@ export async function getProducts({
   categoryId?: string;
   search?: string;
   sellerId?: string;
-}): Promise<ProductWithSeller[] | null> {
+} = {}): Promise<ProductWithSeller[] | null> {
   const supabase = createClient();
 
   let query = supabase

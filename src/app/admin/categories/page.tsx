@@ -82,132 +82,142 @@ export default function AdminCategoriesPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="text-muted-foreground">Loading categories...</div>
+      <div className="min-h-[50vh] flex items-center justify-center p-6">
+        <div className="text-sm text-muted-foreground animate-pulse">Loading categories...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Category Management</h1>
-        <p className="text-muted-foreground">
-          Manage product categories (admin only)
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Header */}
+      <div className="space-y-1 border-b border-border pb-4">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <span>Administration</span>
+        </div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Food Categories</h1>
+        <p className="text-xs text-muted-foreground">
+          Manage product taxonomy (pies, pastries, kakanin, coffee, pasalubong)
         </p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/50 p-3 text-sm text-destructive">
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700">
           {error}
         </div>
       )}
       {message && (
-        <div className="rounded-md bg-success/10 border border-success/50 p-3 text-sm text-success">
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800">
           {message}
         </div>
       )}
 
-      {/* Create form */}
-      <form action={handleCreate} className="space-y-4 rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold">Add category</h2>
-        <div className="flex gap-2">
+      {/* Create form card */}
+      <form action={handleCreate} className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Add New Food Category
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-2.5">
           <input
             type="text"
             name="name"
             defaultValue={createName}
             required
-            placeholder="Category name (e.g., kakanin, coffee, pastries)"
-            className="flex-1 rounded-md border input bg-background text-foreground"
+            placeholder="e.g. Traditional Pies, Native Kakanin, Laguna Coffee"
+            className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
           />
           <button
             type="submit"
-            className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+            className="px-5 py-2 rounded-lg bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 transition-all cursor-pointer"
           >
-            Add
+            Create Category
           </button>
         </div>
       </form>
 
-      {/* List */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold mb-4">Existing categories</h2>
+      {/* Categories Table Card */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-border bg-muted/20">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Current Food Categories ({categories.length})
+          </h2>
+        </div>
+
         {categories.length === 0 ? (
-          <p className="text-muted-foreground">No categories yet.</p>
+          <div className="p-12 text-center text-xs text-muted-foreground">
+            No categories created yet.
+          </div>
         ) : (
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b">
-                <th className="text-left p-2">Name</th>
-                <th className="text-right p-2">Actions</th>
+              <tr className="bg-muted/40 border-b border-border text-xs text-muted-foreground">
+                <th className="text-left px-5 py-3 font-semibold">Category Name</th>
+                <th className="text-right px-5 py-3 font-semibold w-40">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {categories.map((cat) => {
                 const isEditing = editingId === cat.id;
                 return (
-                  <tr key={cat.id} className="border-b">
-                    {isEditing ? (
-                      <>
-                        <td className="p-2">
-                          <form action={handleUpdate} className="flex gap-2">
-                            <input
-                              type="hidden"
-                              name="id"
-                              value={cat.id}
-                            />
-                            <input
-                              type="text"
-                              name="name"
-                              defaultValue={editName}
-                              required
-                              className="rounded-md border input bg-background text-foreground"
-                            />
-                            <button
-                              type="submit"
-                              className="rounded-md border border-transparent bg-success px-3 py-1 text-xs font-semibold text-success-foreground shadow hover:bg-success/90"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingId(null);
-                                setEditName("");
-                              }}
-                              className="rounded-md border border-transparent bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground shadow hover:bg-muted/80"
-                            >
-                              Cancel
-                            </button>
-                          </form>
-                        </td>
-                        <td className="p-2"></td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="p-2">{cat.name}</td>
-                        <td className="p-2 text-right space-x-2">
+                  <tr key={cat.id} className="hover:bg-muted/10 transition-colors">
+                    <td className="px-5 py-3">
+                      {isEditing ? (
+                        <form action={handleUpdate} className="flex gap-2">
+                          <input type="hidden" name="id" value={cat.id} />
+                          <input
+                            type="text"
+                            name="name"
+                            defaultValue={editName}
+                            required
+                            className="flex-1 rounded-md border border-input bg-background px-2.5 py-1 text-xs"
+                          />
+                          <button
+                            type="submit"
+                            className="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs font-bold shadow hover:bg-emerald-700"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditName("");
+                            }}
+                            className="px-3 py-1 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-muted"
+                          >
+                            Cancel
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="font-semibold text-foreground text-sm">{cat.name}</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right space-x-2">
+                      {!isEditing && (
+                        <>
                           <button
                             onClick={() => startEdit(cat)}
-                            className="text-xs font-medium text-primary hover:underline"
+                            className="px-2.5 py-1 rounded-md text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
                           >
-                            Edit
+                            Rename
                           </button>
                           <form action={handleDelete} className="inline">
                             <input type="hidden" name="id" value={cat.id} />
                             <button
                               type="submit"
-                              className="text-xs font-medium text-destructive hover:underline"
+                              className="px-2.5 py-1 rounded-md text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
                               onClick={(e) => {
-                                if (!confirm("Delete this category?")) e.preventDefault();
+                                if (!confirm("Delete this category? Any associated products may be affected.")) {
+                                  e.preventDefault();
+                                }
                               }}
                             >
                               Delete
                             </button>
                           </form>
-                        </td>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

@@ -21,155 +21,199 @@ export default function CartPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-muted-foreground">Loading cart...</div>
+      <div className="min-h-[50vh] flex items-center justify-center p-6">
+        <div className="text-sm text-muted-foreground animate-pulse">Loading shopping cart...</div>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
-          <p className="text-muted-foreground mb-6">
-            Browse the catalog and add some local treats.
-          </p>
-          <Link
-            href="/products"
-            className="rounded-md border border-transparent bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Browse catalog
-          </Link>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+          🛍️
         </div>
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Your basket is empty</h1>
+          <p className="text-xs text-muted-foreground">
+            Explore our San Pablo food catalog and add fresh local delicacies!
+          </p>
+        </div>
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition-all active:scale-95"
+        >
+          <span>Find Local Food</span>
+          <span>→</span>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Your cart</h1>
-        <p className="text-muted-foreground">
-          {itemCount} item{itemCount !== 1 ? "s" : ""}
-        </p>
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border pb-3 px-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">Food Basket</h1>
+          <p className="text-xs text-muted-foreground">
+            {itemCount} item{itemCount !== 1 ? "s" : ""} • {itemsBySeller.size} store{itemsBySeller.size !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <Link
+          href="/products"
+          className="text-xs font-bold text-primary hover:underline"
+        >
+          + Add more items
+        </Link>
       </div>
 
-      {/* Cart items */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold mb-4">Items</h2>
-        <div className="space-y-4">
-          {Array.from(itemsBySeller.entries()).map(([sellerId, seller]) => (
-            <div key={sellerId} className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <span>From {seller.name}</span>
-                <span className="ml-auto font-normal">Delivery fee: ₱50.00</span>
+      <div className="space-y-4">
+        {/* Cart Items grouped by seller */}
+        {Array.from(itemsBySeller.entries()).map(([sellerId, seller]) => {
+          const sellerSubtotal = seller.items.reduce(
+            (acc, i) => acc + i.price * i.quantity,
+            0
+          );
+
+          return (
+            <div
+              key={sellerId}
+              className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
+            >
+              {/* Seller Header */}
+              <div className="bg-primary/5 px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🏪</span>
+                  <span className="font-bold text-xs text-foreground uppercase tracking-wider">
+                    {seller.name}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground font-semibold">
+                  Delivery: ₱50.00
+                </span>
               </div>
-              <div className="space-y-2">
+
+              {/* Items in this seller */}
+              <div className="divide-y divide-border/60">
                 {seller.items.map((item) => (
                   <div
                     key={item.productId}
-                    className="flex items-center gap-3 border-b pb-2 last:border-0"
+                    className="p-3.5 sm:p-4 flex items-center gap-3 sm:gap-4"
                   >
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-16 h-16 rounded object-cover border"
+                        className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover border border-border shrink-0"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded bg-muted flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No image</span>
+                      <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-muted/60 border border-border flex items-center justify-center shrink-0 text-2xl">
+                        🥧
                       </div>
                     )}
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{item.name}</span>
-                        <span className="font-medium">₱{item.price.toFixed(2)}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <h3 className="font-extrabold text-xs sm:text-sm text-foreground truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm font-black text-foreground">
+                        ₱{item.price.toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
                         Stock: {item.stock}
-                      </div>
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Quantity & Delete Controls */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center border border-border rounded-xl bg-background overflow-hidden shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-sm font-bold text-foreground hover:bg-muted active:bg-muted/80 disabled:opacity-30 transition-colors"
+                          aria-label="Decrease quantity"
+                        >
+                          −
+                        </button>
+                        <span className="w-7 sm:w-8 text-center text-xs font-black text-foreground">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          disabled={item.quantity >= item.stock}
+                          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-sm font-bold text-foreground hover:bg-muted active:bg-muted/80 disabled:opacity-30 transition-colors"
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
-                        className="rounded-md border border-transparent bg-muted px-2 py-1 text-xs text-muted-foreground disabled:opacity-50"
-                      >
-                        −
-                      </button>
-                      <span className="text-sm font-medium w-8 text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.productId, item.quantity + 1)
-                        }
-                        disabled={item.quantity >= item.stock}
-                        className="rounded-md border border-transparent bg-muted px-2 py-1 text-xs text-muted-foreground disabled:opacity-50"
-                      >
-                        +
-                      </button>
-                      <button
+                        type="button"
                         onClick={() => removeItem(item.productId)}
-                        className="text-xs text-destructive hover:underline ml-2"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
+                        aria-label="Remove item"
                       >
-                        Remove
+                        ✕
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Order summary */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="text-lg font-semibold mb-4">Order summary</h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span>Subtotal ({itemCount} item{itemCount !== 1 ? "s" : ""})</span>
-            <span>₱{subtotal.toFixed(2)}</span>
-          </div>
-          {itemsBySeller.size > 1 && (
-            <div className="flex justify-between">
-              <span>
-                Delivery fee (₱50 × {itemsBySeller.size} sellers)
-              </span>
-              <span>₱{(deliveryFee).toFixed(2)}</span>
+              {/* Seller Subtotal */}
+              <div className="bg-muted/10 px-4 py-2 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Merchant subtotal</span>
+                <span className="font-bold text-foreground">
+                  ₱{sellerSubtotal.toFixed(2)}
+                </span>
+              </div>
             </div>
-          )}
-          {itemsBySeller.size === 1 && (
-            <div className="flex justify-between">
-              <span>Delivery fee</span>
-              <span>₱{deliveryFee.toFixed(2)}</span>
+          );
+        })}
+
+        {/* Pricing Summary Card */}
+        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm space-y-3">
+          <h2 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+            Bill Summary
+          </h2>
+
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Items Total</span>
+              <span className="font-bold text-foreground">₱{subtotal.toFixed(2)}</span>
             </div>
-          )}
-          <div className="flex justify-between font-semibold border-t pt-2">
-            <span>Total</span>
-            <span>₱{grandTotal.toFixed(2)}</span>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Delivery Fee (₱50 × {itemsBySeller.size} store{itemsBySeller.size !== 1 ? "s" : ""})</span>
+              <span className="font-bold text-foreground">₱{deliveryFee.toFixed(2)}</span>
+            </div>
+            <div className="pt-2.5 border-t border-border flex justify-between items-center text-sm">
+              <span className="font-extrabold text-foreground">Total Payable</span>
+              <span className="text-lg font-black text-foreground">₱{grandTotal.toFixed(2)}</span>
+            </div>
           </div>
         </div>
-        <div className="mt-6">
+
+        {/* Checkout Button (Full width on mobile, thumb-friendly) */}
+        <div className="pt-1">
           <Link
-            href="/products"
-            className="text-sm text-muted-foreground hover:underline"
+            href="/checkout"
+            className="w-full flex items-center justify-between p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all active:scale-[0.99]"
           >
-            ← Continue shopping
+            <div className="flex flex-col text-left">
+              <span className="font-black text-sm">Proceed to Checkout</span>
+              <span className="text-[11px] text-white/80">{itemCount} item{itemCount !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black">₱{grandTotal.toFixed(2)}</span>
+              <span>→</span>
+            </div>
           </Link>
         </div>
       </div>
-
-      {/* Checkout button */}
-      <Link
-        href="/checkout"
-        className="block w-full rounded-md bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-      >
-        Proceed to checkout
-      </Link>
     </div>
   );
 }

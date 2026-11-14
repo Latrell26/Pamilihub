@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProductDetail } from "@/modules/catalog/queries";
+import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 
 export default async function ProductDetailPage({
   params,
@@ -11,83 +12,131 @@ export default async function ProductDetailPage({
 
   if (!product) {
     return (
-      <div className="max-w-md mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold">Product not found</h1>
-        <p className="mt-4 text-muted-foreground">
-          The product you&#39;re looking for does not exist or is not available.
+      <div className="max-w-md mx-auto p-12 text-center space-y-4">
+        <div className="text-4xl">🥧</div>
+        <h1 className="text-lg font-bold text-foreground">Delicacy not found</h1>
+        <p className="text-xs text-muted-foreground">
+          The product you&#39;re looking for does not exist or may have been unlisted by the merchant.
         </p>
         <Link
           href="/products"
-          className="mt-6 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+          className="inline-block px-5 py-2.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
         >
-          Browse catalog
+          Browse Catalog
         </Link>
       </div>
     );
   }
 
+  const inStock = product.stock > 0;
+
   return (
-    <div className="max-w-5xl mx-auto p-6 gap-8 md:flex">
-      <div className="md:w-1/2 space-y-4">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="rounded-lg border overflow-hidden w-full object-cover"
-            style={{ aspectRatio: "1 / 1" }}
-          />
-        ) : (
-          <div className="aspect-square rounded-lg border bg-muted flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">No image</span>
-          </div>
-        )}
-        <div className="mt-4 text-sm text-muted-foreground">
-          Stock:{product.stock > 0 ? ` ${product.stock} available` : " Out of stock"}
-        </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6">
+      {/* Top Mobile Bar with Back link */}
+      <div className="flex items-center justify-between">
         <Link
           href="/products"
-          className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 inline-block"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground hover:bg-muted transition-colors active:scale-95"
         >
-          Back to catalog
+          <span>← Back</span>
         </Link>
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+          San Pablo Delicacy
+        </span>
       </div>
 
-      <div className="md:w-1/2 space-y-4">
-        <h1 className="text-2xl font-bold">{product.name}</h1>
-        <p className="text-lg text-muted-foreground">
-          ₱{Number(product.price).toFixed(2)}
-        </p>
-
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <h2 className="text-lg font-semibold">Description</h2>
-          <p className="text-muted-foreground">
-            {product.description ?? "No description available."}
-          </p>
-
-          <h2 className="text-lg font-semibold">Seller</h2>
-          <p className="text-muted-foreground">
-            {product.sellers?.store_name ?? "Unknown seller"}
-          </p>
-          {product.sellers?.location && (
-            <p className="text-muted-foreground text-sm">
-              {product.sellers.location}
-            </p>
+      {/* Main Product Card */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
+        {/* Left: Product Image */}
+        <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm relative">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full aspect-square sm:aspect-4/3 object-cover"
+            />
+          ) : (
+            <div className="w-full aspect-square sm:aspect-4/3 bg-muted/40 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <span className="text-6xl">🥥</span>
+              <span className="text-xs">No image provided</span>
+            </div>
           )}
+
+          {/* Stock tag */}
+          <div className="absolute top-3 right-3">
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black shadow-sm backdrop-blur-md ${
+                inStock
+                  ? "bg-emerald-600/90 text-white"
+                  : "bg-red-600/90 text-white"
+              }`}
+            >
+              {inStock ? `${product.stock} In Stock` : "Sold Out"}
+            </span>
+          </div>
         </div>
 
-        {product.stock > 0 ? (
-          <div className="rounded-lg border bg-success/50 p-4">
-            <p className="text-sm text-success/foreground">
-              This product is available for purchase.
+        {/* Right: Info and Action */}
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+              {product.name}
+            </h1>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-foreground">
+                ₱{Number(product.price).toFixed(2)}
+              </span>
+              <span className="text-xs text-muted-foreground">+ ₱50 delivery</span>
+            </div>
+          </div>
+
+          {/* Merchant Card */}
+          <div className="p-4 rounded-2xl border border-border bg-card flex items-center gap-3.5 shadow-sm">
+            <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary font-bold flex items-center justify-center text-lg shrink-0">
+              🏪
+            </div>
+            <div className="space-y-0.5 text-xs flex-1 min-w-0">
+              <span className="text-[10px] uppercase font-bold text-primary block tracking-wider">
+                Local Food Merchant
+              </span>
+              <p className="font-extrabold text-foreground text-sm truncate">
+                {product.sellers?.store_name ?? "San Pablo Merchant"}
+              </p>
+              {product.sellers?.location && (
+                <p className="text-muted-foreground truncate">
+                  📍 {product.sellers.location}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="p-4 sm:p-5 rounded-2xl border border-border bg-card space-y-2 shadow-sm">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Description & Highlights
+            </h2>
+            <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
+              {product.description || "Authentic freshly prepared local delicacy from San Pablo City."}
             </p>
           </div>
-        ) : (
-          <div className="rounded-lg border bg-destructive/50 p-4">
-            <p className="text-sm text-destructive/foreground">
-              This product is currently out of stock.
+
+          {/* Action button */}
+          <div className="space-y-2 pt-2">
+            <AddToCartButton
+              productId={product.id}
+              name={product.name}
+              price={Number(product.price)}
+              stock={product.stock}
+              sellerId={product.seller_id}
+              sellerName={product.sellers?.store_name ?? "Local Seller"}
+              imageUrl={product.image_url}
+              size="md"
+            />
+            <p className="text-[11px] text-muted-foreground text-center">
+              Flat ₱50 delivery fee applied per local merchant
             </p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

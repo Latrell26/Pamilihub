@@ -1,24 +1,34 @@
 import Link from "next/link";
 import { getCustomerOrders } from "@/modules/orders/queries";
 import { getHeaderUser } from "@/lib/auth/header-user";
+import { OrderStatusBadge, PaymentBadge } from "@/components/seller/orders/StatusBadge";
+import type { OrderStatus, PaymentStatus, PaymentMethod } from "@/modules/orders/types";
+
+function formatDate(iso: string) {
+  return new Intl.DateTimeFormat("fil-PH", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
+}
 
 export default async function OrdersPage() {
   const user = await getHeaderUser();
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Not signed in</h1>
-          <p className="mt-4 text-muted-foreground">
-            Please sign in to view your orders.
-          </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            Sign in
-          </Link>
-        </div>
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <h1 className="text-xl font-bold text-foreground">Sign in to view orders</h1>
+        <p className="text-xs text-muted-foreground">
+          Please sign in to access your order history and live delivery statuses.
+        </p>
+        <Link
+          href="/login"
+          className="inline-block px-6 py-2.5 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+        >
+          Sign In
+        </Link>
       </div>
     );
   }
@@ -26,96 +36,119 @@ export default async function OrdersPage() {
   const orders = await getCustomerOrders();
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">My orders</h1>
-        <p className="text-muted-foreground">
-          Track your purchases and their status.
-        </p>
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border pb-3 px-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">My Orders</h1>
+          <p className="text-xs text-muted-foreground">
+            Track preparation and delivery of your food orders
+          </p>
+        </div>
+        <Link
+          href="/products"
+          className="text-xs font-bold text-primary hover:underline"
+        >
+          + Order Again
+        </Link>
       </div>
 
       {(orders ?? []).length === 0 ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
-          <p className="text-muted-foreground">No orders yet.</p>
+        <div className="rounded-2xl border border-dashed border-border p-12 text-center space-y-4 max-w-sm mx-auto">
+          <div className="w-14 h-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+            📦
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-bold text-foreground text-sm">No orders yet</h3>
+            <p className="text-xs text-muted-foreground">
+              When you order delicacies from San Pablo sellers, your order status will appear here.
+            </p>
+          </div>
           <Link
             href="/products"
-            className="mt-4 inline-block rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+            className="inline-block px-5 py-2.5 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 transition-all active:scale-95"
           >
-            Browse catalog
+            Explore Delicacies
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card p-4">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2">Order</th>
-                <th className="text-left p-2">Seller</th>
-                <th className="text-right p-2">Total</th>
-                <th className="text-right p-2">Payment</th>
-                <th className="text-right p-2">Status</th>
-                <th className="text-right p-2">Date</th>
-                <th className="text-right p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(orders ?? []).map((order) => (
-                <tr key={order.id} className="border-b">
-                  <td className="p-2">
-                    <Link
-                      href={`/orders/${order.id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      #{order.id.slice(0, 8)}
-                    </Link>
-                  </td>
-                  <td className="p-2">
-                    {order.sellerStoreName || "Unknown seller"}
-                  </td>
-                  <td className="p-2 text-right font-medium">
-                    ₱{order.total.toFixed(2)}
-                  </td>
-                  <td className="p-2 text-right">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      order.payment_method === "mockpay"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}>
-                      {order.payment_method === "mockpay" ? "MockPay" : "COD"}
+        <div className="space-y-3.5">
+          {(orders ?? []).map((order) => {
+            const shortId = `#${order.id.slice(0, 8).toUpperCase()}`;
+            const items = order.order_items ?? [];
+            const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+            const canPay = order.payment_method === "mockpay" && order.payment_status === "pending";
+
+            return (
+              <div
+                key={order.id}
+                className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-primary/40 transition-all space-y-3"
+              >
+                {/* Store Header & Date */}
+                <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm">🏪</span>
+                    <span className="font-black text-xs sm:text-sm text-foreground truncate">
+                      {order.sellerStoreName || "San Pablo Merchant"}
                     </span>
-                  </td>
-                  <td className="p-2 text-right">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      order.order_status === "completed"
-                        ? "bg-success/10 text-success"
-                        : order.order_status === "rejected" ||
-                          order.order_status === "cancelled"
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-muted/50 text-muted-foreground"
-                    }`}>
-                      {order.order_status}
-                    </span>
-                  </td>
-                  <td className="p-2 text-right text-muted-foreground">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-2 text-right">
-                    {order.payment_method === "mockpay" &&
-                    order.payment_status === "pending" ? (
+                  </div>
+                  <span className="text-[11px] text-muted-foreground shrink-0">
+                    {formatDate(order.created_at)}
+                  </span>
+                </div>
+
+                {/* Items preview & Status */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-xs text-muted-foreground">{shortId}</span>
+                      <span className="text-[11px] text-muted-foreground">• {itemCount} item{itemCount !== 1 ? "s" : ""}</span>
+                    </div>
+
+                    <p className="text-xs text-foreground font-medium truncate">
+                      {items.map((i) => `${i.quantity}x ${i.products?.name ?? "Item"}`).join(", ")}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      <OrderStatusBadge status={order.order_status as OrderStatus} size="sm" />
+                      <PaymentBadge
+                        status={order.payment_status as PaymentStatus}
+                        method={order.payment_method as PaymentMethod}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Price & Action */}
+                  <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                    <div className="sm:text-right">
+                      <span className="text-[10px] text-muted-foreground block">Total Amount</span>
+                      <span className="text-base font-black text-foreground">
+                        ₱{Number(order.total).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {canPay && (
+                        <Link
+                          href={`/orders/${order.id}/pay`}
+                          className="px-3.5 py-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90 transition-all active:scale-95"
+                        >
+                          Pay Now
+                        </Link>
+                      )}
                       <Link
-                        href={`/orders/${order.id}/pay`}
-                        className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
+                        href={`/orders/${order.id}`}
+                        className="px-3.5 py-1.5 rounded-xl border border-border bg-background text-xs font-bold text-foreground hover:bg-muted transition-colors active:scale-95"
                       >
-                        Pay now
+                        Details →
                       </Link>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -11,6 +11,7 @@ type AddToCartButtonProps = {
   sellerId: string;
   sellerName: string;
   imageUrl: string | null;
+  size?: "sm" | "md";
 };
 
 export function AddToCartButton({
@@ -21,20 +22,23 @@ export function AddToCartButton({
   sellerId,
   sellerName,
   imageUrl,
+  size = "md",
 }: AddToCartButtonProps) {
-  const { addItem, itemCount } = useCart();
+  const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
   if (stock === 0) {
     return (
       <button
         disabled
-        className="w-full rounded-md border border-transparent bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground shadow disabled:opacity-70"
+        className="w-full rounded-lg border border-border bg-muted/60 px-3 py-2 text-xs font-semibold text-muted-foreground cursor-not-allowed"
       >
-        Out of stock
+        Out of Stock
       </button>
     );
   }
+
+  const py = size === "sm" ? "py-1.5 text-xs" : "py-2 text-xs sm:text-sm";
 
   return (
     <button
@@ -45,13 +49,27 @@ export function AddToCartButton({
         setAdded(true);
         setTimeout(() => setAdded(false), 1500);
       }}
-      className={`w-full rounded-md border px-4 py-2 text-sm font-semibold shadow transition-all ${
+      className={`w-full rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] ${py} ${
         added
-          ? "border-transparent bg-success text-success-foreground"
-          : "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+          ? "bg-emerald-600 text-white"
+          : "bg-primary text-primary-foreground hover:bg-primary/90"
       }`}
     >
-      {added ? "Added!" : "Add to cart"}
+      {added ? (
+        <>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+          <span>Added to Cart!</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          <span>Add to Cart</span>
+        </>
+      )}
     </button>
   );
 }

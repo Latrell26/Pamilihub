@@ -13,130 +13,145 @@ export default function SiteHeader({
 }>) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
-  const { items, itemCount } = useCart();
+  const { itemCount } = useCart();
 
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
-    customer: [{ href: "/products", label: "Catalog" }],
+    customer: [
+      { href: "/products", label: "Delicacies" },
+      { href: "/orders", label: "My Orders" },
+    ],
     seller: [
-      { href: "/seller/products", label: "My Products" },
       { href: "/seller/orders", label: "Orders" },
+      { href: "/seller/products", label: "Products" },
     ],
     admin: [
+      { href: "/admin/sellers", label: "Approvals" },
       { href: "/admin/categories", label: "Categories" },
-      { href: "/admin/sellers", label: "Seller Approvals" },
     ],
   };
 
-  const links = user ? roleLinks[user.role] ?? [] : [];
+  const links = user ? roleLinks[user.role] ?? [{ href: "/products", label: "Delicacies" }] : [
+    { href: "/products", label: "Delicacies" },
+  ];
 
   return (
-    <nav className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-20">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="font-bold text-lg tracking-tight">
-            Pamilihub
+    <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-md">
+      {/* Top Location Bar (PWA Food Delivery feel) */}
+      <div className="bg-primary/5 border-b border-primary/10 py-1 px-4 text-center">
+        <div className="max-w-7xl mx-auto flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 mx-auto sm:mx-0 truncate">
+            <span className="text-primary font-bold">📍 Delivering to:</span>
+            <span className="font-semibold text-foreground truncate">San Pablo City, Laguna</span>
+            <span className="hidden sm:inline text-primary/60">• Flat ₱50 Delivery Fee</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-3">
+            <span className="font-medium">Direct from Local Food Producers</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main App Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-4">
+        {/* Brand / Logo */}
+        <div className="flex items-center gap-6">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 group font-extrabold text-base sm:text-lg tracking-tight text-foreground transition-colors"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm shadow-md shadow-primary/25 group-hover:scale-105 transition-transform">
+              P
+            </div>
+            <div className="flex flex-col">
+              <span className="leading-tight font-black text-foreground">Pamilihub</span>
+              <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Food Delicacies</span>
+            </div>
           </Link>
-        </div>
 
-        <div className="hidden md:flex items-center gap-4 text-sm">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              {l.label}
-            </Link>
-          ))}
-          {user && (
-            <Link
-              href="/profile"
-              className="font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              Profile
-            </Link>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {user && (
-            <>
-              <Link
-                href="/cart"
-                className="relative flex items-center justify-center w-8 h-8 rounded-full border border-border bg-background hover:bg-muted transition-colors"
-                title="Cart"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            {links.map((l) => {
+              const active = pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href));
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
                 >
-                  <circle cx="6" cy="19" r="1" />
-                  <circle cx="18" cy="19" r="1" />
-                  <path d="M3 17l8-12h4l8 12" />
-                </svg>
-                {itemCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-primary px-1 text-[10px] text-primary-foreground font-bold leading-none">
-                    {itemCount > 9 ? "9+" : itemCount}
-                  </span>
-                )}
+                  {l.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Right side actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Cart Icon Button */}
+          <Link
+            href="/cart"
+            className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"
+            aria-label="Shopping Cart"
+          >
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-primary-foreground shadow-md animate-in zoom-in-50">
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+            )}
+          </Link>
+
+          {/* User Section */}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-[10px] uppercase">
+                  {user.role[0]}
+                </div>
+                <span className="capitalize hidden sm:inline">{user.role}</span>
               </Link>
-              <form action={signoutAction} className="ml-2">
+              <form action={signoutAction} className="hidden sm:inline">
                 <button
                   type="submit"
-                  className="text-sm font-medium text-destructive hover:underline"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   Sign out
                 </button>
               </form>
-            </>
-          )}
-          {!user && !isAuthPage && (
-            <>
+            </div>
+          ) : !isAuthPage ? (
+            <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="rounded-md border border-transparent bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+                className="px-3.5 py-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"
               >
-                Register
+                Sign Up
               </Link>
-            </>
-          )}
+            </div>
+          ) : null}
         </div>
       </div>
-
-      {/* Mobile navigation row — visible below the header on phones */}
-      {links.length > 0 && (
-        <div className="flex md:hidden flex-col items-start gap-2 py-2 px-4 border-t border-border">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              {l.label}
-            </Link>
-          ))}
-          {user && (
-            <Link
-              href="/profile"
-              className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              Profile
-            </Link>
-          )}
-        </div>
-      )}
-    </nav>
+    </header>
   );
 }
