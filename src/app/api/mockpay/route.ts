@@ -92,7 +92,7 @@ export async function POST(req: Request) {
   // ---- Verify order exists, belongs to caller, amount matches, awaiting payment ----
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, customer_id, total, payment_status")
+    .select("id, customer_id, total, payment_status, payment_method, order_status")
     .eq("id", order_id)
     .single();
 
@@ -108,6 +108,22 @@ export async function POST(req: Request) {
       status: 403,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  // Only MockPay orders can be paid here
+  if (order.payment_method !== "mockpay") {
+    return new Response(
+      JSON.stringify({ error: "This order was not placed via MockPay." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Cannot pay a terminal order
+  if (order.order_status !== "pending") {
+    return new Response(
+      JSON.stringify({ error: "Order is no longer awaiting payment." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   if (order.payment_status !== "pending") {

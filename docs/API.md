@@ -37,17 +37,27 @@ Cancelled:
   "message": "Payment cancelled. Stock has been restored."
 }
 ```
+Cancelling also sets `order_status = cancelled`, so the seller cannot accept or fulfil it afterwards.
+
 Error:
 ```json
 { "error": "Order not found or not awaiting payment." }
 ```
-Use HTTP 200 for success, 400 for validation errors, 401/403 for auth errors, 404 for a missing order.
+Non-MockPay order (e.g. COD):
+```json
+{ "error": "This order was not placed via MockPay." }
+```
+Terminal order (`rejected`, `cancelled`, or `completed`):
+```json
+{ "error": "Order is no longer awaiting payment." }
+```
+Use HTTP 200 for success, 400 for validation errors (including non-MockPay or terminal orders), 401/403 for auth errors, 404 for a missing order.
 
 ## Flow
 1. Checkout creates the order(s) with `payment_status = pending`.
 2. Customer chooses MockPay and sees the simulated payment page.
 3. The page sends the JSON request to `/api/mockpay`.
-4. The route updates `payment_status`, writes a `payments` record, and restores stock if cancelled.
+4. The route updates `payment_status` (and `order_status` to `cancelled` on cancel), writes a `payments` record, and restores stock if cancelled.
 5. The UI shows the result; the seller sees the updated status.
 
 ## Postman tests (minimum)
@@ -57,5 +67,7 @@ Use HTTP 200 for success, 400 for validation errors, 401/403 for auth errors, 40
 - Another customer's order → 403.
 - No session → 401.
 - Order already paid → 400.
+- COD order passed to MockPay → 400.
+- Rejected or cancelled order → 400.
 
 Future enhancements (not in scope): webhook signing, replaceable payment-adapter architecture, real gateway integration.

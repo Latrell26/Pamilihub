@@ -86,7 +86,10 @@ export default async function OrderDetailPage({
     (acc, i) => acc + Number(i.unit_price) * i.quantity,
     0
   );
-  const canPay = order.payment_method === "mockpay" && order.payment_status === "pending";
+  const canPay =
+    order.payment_method === "mockpay" &&
+    order.payment_status === "pending" &&
+    order.order_status === "pending";
   const currentStatus = order.order_status as OrderStatus;
   const isTerminal = currentStatus === "rejected" || currentStatus === "cancelled";
   const currentIndex = TIMELINE_STEPS.indexOf(currentStatus);

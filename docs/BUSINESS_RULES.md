@@ -24,9 +24,14 @@ If a seller rejects an order already paid through MockPay, set payment status to
 `pending`, `accepted`, `rejected`, `preparing`, `delivering`, `completed`, `cancelled`. Updated **manually** by the seller or admin. Suggested flow:
 `pending → accepted → preparing → delivering → completed`, with `rejected` (by seller) or `cancelled` as exits.
 
-## 6. Seller approval
+## 6. Payment-gated order acceptance
+- **MockPay:** the seller may only `accept` an order after the customer has approved payment on MockPay (`payment_status = paid`). Before payment, the seller may only `reject` the order (restoring stock) or wait. Once `accepted`, statuses progress normally: `accepted → preparing → delivering → completed`.
+- **Cash on delivery:** the seller may `accept` immediately; payment stays `pending` until the seller marks the order `completed`, then it becomes `paid`.
+- Terminal states (`completed`, `rejected`, `cancelled`) block all further transitions.
+
+## 7. Seller approval
 New sellers start as `pending`. Only `approved` sellers can list products or receive orders. Admin approves or rejects.
 
-## 7. Visibility
+## 8. Visibility
 - Customers see only products from approved sellers.
 - Customers and sellers must both be able to clearly see the order and payment status of an order.

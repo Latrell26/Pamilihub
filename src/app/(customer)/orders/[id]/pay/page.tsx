@@ -66,6 +66,23 @@ export default async function OrderPayPage({
     );
   }
 
+  // Block payment if the order is already terminal (rejected/cancelled/completed)
+  const terminalStatuses = ["rejected", "cancelled", "completed"];
+  if (terminalStatuses.includes(order.order_status)) {
+    return (
+      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
+        <div className="text-3xl">🛑</div>
+        <h1 className="text-lg font-bold text-foreground">Order Already Closed</h1>
+        <p className="text-xs text-muted-foreground">
+          This order is <strong className="capitalize">{order.order_status}</strong> and cannot be paid anymore.
+        </p>
+        <Link href={`/orders/${order.id}`} className="inline-block px-5 py-2.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow">
+          View Order Status
+        </Link>
+      </div>
+    );
+  }
+
   if (order.payment_status !== "pending") {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">

@@ -64,8 +64,9 @@ Run the SQL migrations located in `supabase/migrations/` in sequential order via
 5. `005_storage_bucket.sql` & `006_storage_policy_hardening.sql` (Product images storage bucket)
 6. `007_stock_transaction.sql`, `008_stock_functions_security_definer.sql`, `009_fix_stock_function_loops.sql`, `010_fix_update_order_status.sql` (Atomic stock & order updates)
 7. `011_harden_rls_policies.sql`, `012_fix_checkout_cart_atomic.sql`, `013_allow_seller_reapply.sql` (Security hardening & re-apply)
+8. `014_harden_update_order_status.sql`, `015_fix_checkout_cart_bugs.sql`, `016_enforce_payment_before_accept.sql`, `017_fix_process_mockpay_cancel_where.sql` (Order status transitions, checkout fixes & payment gating)
 
-*(Optional)* Demo data: run `pnpm tsx scripts/seed-demo.ts` to create seed accounts, sellers, categories, and products via the service-role key.
+*(Optional)* Demo data: run `pnpm exec tsx scripts/seed.ts` to create seed accounts, sellers, categories, and products via the service-role key.
 
 ### 5. Start Development Server
 ```bash

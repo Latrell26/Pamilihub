@@ -135,7 +135,10 @@ Pamilihub strictly prohibits real payment gateway integration (no PayPal, Stripe
   ```
 - **Responses:**
   - `200 OK`: `{"order_id": "...", "payment_status": "paid", "message": "Payment approved (simulated)."}`
-  - `400 Bad Request`: Amount mismatch or validation error.
+  - `200 OK (cancel)`: `{"order_id": "...", "payment_status": "cancelled", "message": "Payment cancelled. Stock has been restored."}` — the order status is also set to `cancelled`.
+  - `400 Bad Request`: Amount mismatch, non-MockPay order, terminal order, or validation error.
   - `401 Unauthorized`: Missing or invalid session/Bearer token.
   - `403 Forbidden`: Caller is not a customer or does not own the order.
   - `404 Not Found`: Order ID does not exist or is not pending payment.
+
+> **Payment-gated acceptance:** For MockPay orders, the seller may only `accept` after `payment_status = paid`. The `update_order_status` RPC rejects `accepted` with `Customer has not paid for this MockPay order yet.` COD orders may be accepted immediately and become `paid` when the seller marks them `completed`.

@@ -36,7 +36,7 @@ This document outlines the functional test cases, security checks, and verificat
 
 | Test ID | Test Scenario | Steps | Expected Result | Status |
 |---|---|---|---|---|
-| **CART-01** | Add Delicacies to Cart | Click "Add to Cart" on single or multiple items | Item added to localStorage cart (`pamilihub_cart`); header cart badge increments. | PASS |
+| **CART-01** | Add Delicacies to Cart | Click "Add to Cart" on single or multiple items | Item added to per-user localStorage cart (`pamilihub_cart_<userId>`); header cart badge increments. | PASS |
 | **CART-02** | Quantity Management | Increment/decrement item quantity or remove item in `/cart` | Subtotals recalculate accurately; removing last quantity removes item. | PASS |
 | **CART-03** | Multi-Seller Order Splitting | Cart contains items from 2 different sellers; proceed to `/checkout` | System groups items by seller; calculates ₱50 flat delivery fee per seller; displays separate order totals. | PASS |
 | **CART-04** | Server-Side Checkout Validation | Submit checkout with blank address or invalid phone number | Zod schema rejects submission; returns inline validation errors without creating orders. | PASS |
@@ -54,6 +54,8 @@ This document outlines the functional test cases, security checks, and verificat
 | **PAY-03** | MockPay Cancellation & Stock Restore | Click "Cancel Payment" | Payment cancelled; order status updated to `cancelled`; `restore_stock` automatically returns items to inventory. | PASS |
 | **PAY-04** | Cash on Delivery (COD) | Place order with COD method | Order created with `payment_method = 'cod'` and `payment_status = 'pending'`. Payment flips to `paid` when seller marks completed. | PASS |
 | **PAY-05** | Postman API Security Suite | Run `postman/pamilihub_mockpay.postman_collection.json` (6 test cases) | Validates 401 Unauthorized (missing header), 403 Forbidden (wrong role), 404 Not Found, 400 Bad Request, 200 OK. | PENDING |
+| **PAY-06** | MockPay Rejects Non-MockPay Order | Send a COD order ID to `POST /api/mockpay` | Returns 400 `"This order was not placed via MockPay."`; no payment record created. | PASS |
+| **PAY-07** | MockPay Rejects Terminal Order | Send a `rejected` or `cancelled` order ID to `POST /api/mockpay` | Returns 400 `"Order is already in a terminal state (cancelled)."`; no payment record created. | PASS |
 
 ---
 
@@ -66,6 +68,9 @@ This document outlines the functional test cases, security checks, and verificat
 | **SELLER-03**| Master-Detail Orders Interface | Seller navigates to `/seller/orders` | Displays searchable list of incoming orders on left; full customer delivery and item breakdown on right. | PASS |
 | **SELLER-04**| Order Lifecycle Progression | Seller clicks: Accept -> Preparing -> Delivering -> Completed | Order status transitions smoothly with optimistic UI update; customer sees updated status. | PASS |
 | **SELLER-05**| Seller Order Rejection | Seller clicks "Reject Order" | Order status set to `rejected`; payment set to `refunded` (if paid); product stock restored to seller inventory. | PASS |
+| **SELLER-06**| Seller Cannot Accept Unpaid MockPay Order | Open a pending MockPay order before the customer pays; try to accept it | Accept is hidden in the seller UI; backend `update_order_status` rejects `accepted` with "Customer has not paid for this MockPay order yet." | PASS |
+| **SELLER-07**| Seller Can Accept COD Immediately | Open a pending COD order; click "Accept Order" | Order status becomes `accepted` without prior payment; payment stays `pending` until completed. | PASS |
+| **SELLER-08**| Unpaid Order Rejection Restores Stock | Seller rejects an unpaid MockPay or COD order | Order status becomes `rejected`, payment status becomes `cancelled`, and product stock is restored. | PASS |
 
 ---
 
@@ -80,3 +85,17 @@ This document outlines the functional test cases, security checks, and verificat
 | **ADMIN-05**| Product Catalog Moderation | Admin navigates to `/admin/products` and clicks "Remove Listing" | Admin confirms modal; product deleted server-side via `adminDeleteProductAction` respecting admin RLS. | PASS |
 | **ADMIN-06**| Category Taxonomy Management | Admin adds, updates, or deletes delicacy category on `/admin/categories` | Categories table updated; public catalog filter reflects new taxonomy immediately. | PASS |
 | **ADMIN-07**| User Directory Audit | Admin navigates to `/admin/users` | Lists all registered accounts with contact details, role badges, and linked seller stores. | PASS |
+
+---
+
+## 7. Payment-Gating Verification (2026-11-14)
+
+The following cases were executed directly against the Supabase RPCs with the demo accounts (customer `ana@pamilihub.test`, seller `maria@pamilihub.test`) after migrations `016` and `017`:
+
+- **SELLER-06** — seller accept on unpaid MockPay order returned: `Customer has not paid for this MockPay order yet.` Order stayed `pending/pending`.
+- **SELLER-07** — COD order moved to `accepted` immediately with payment `pending`.
+- **SELLER-08** — rejecting the unpaid COD order set `rejected`/`cancelled` and restored stock (19 to 20).
+- **PAY-06** — COD order sent to MockPay returned: `This order was not placed via MockPay.`
+- **PAY-07** — cancelled MockPay order returned: `Order is already in a terminal state (cancelled).`
+- **Cancel path** — `cancel` returned HTTP 204, set `cancelled`/`cancelled`, and restored stock (16 to 17).
+- **Approve path** — after MockPay approval the seller could accept the order (`paid`/`accepted`).

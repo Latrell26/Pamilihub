@@ -178,7 +178,15 @@ function ActionButtons({ order, onStatusUpdated }: ActionButtonsProps) {
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const allowedNext = ALLOWED_TRANSITIONS[order.order_status as OrderStatus] ?? [];
-  if (allowedNext.length === 0) return null;
+
+  // MockPay: block 'accept' until the customer has paid
+  const mockpayNotPaid =
+    order.payment_method === "mockpay" && order.payment_status !== "paid";
+  const filteredAllowed = mockpayNotPaid
+    ? allowedNext.filter((s) => s !== "accepted")
+    : allowedNext;
+
+  if (filteredAllowed.length === 0) return null;
 
   function handleAction(newStatus: NextStatus) {
     startTransition(async () => {
@@ -208,8 +216,16 @@ function ActionButtons({ order, onStatusUpdated }: ActionButtonsProps) {
           {toast.msg}
         </div>
       )}
+
+      {mockpayNotPaid && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          ⏳ <strong>Awaiting MockPay payment.</strong> You can reject this order or wait for
+          the customer to pay before accepting.
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
-        {allowedNext.map((next) => {
+        {filteredAllowed.map((next) => {
           const variant = ACTION_VARIANT[next];
           return (
             <button
