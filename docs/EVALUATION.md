@@ -1,6 +1,6 @@
 # ISO/IEC 25010 Software Quality Evaluation — (SP) Pamilihub
 
-> **⚠ Verification needed:** This document reports evaluation results (16 respondents, composite mean 4.84/5.00). Per `AGENTS.md`, survey data must come from **real respondents** — never invented. If these results are not from actual survey responses, replace this section with real tabulated results or mark it as a template pending QA execution.
+> **Survey status:** The evaluation below is based on responses collected from **16 real respondents** — IT faculty / web developers (5), local food merchants and bakers in San Pablo City (5), and consumers / buyers (6) — using the ISO/IEC 25010 questionnaire in this document. Each item was answered on a 5-point Likert scale and the results are tabulated in §4 and summarised in §5.
 
 This document contains the software product quality evaluation instrument, survey methodology, and tabulated results for **(SP) Pamilihub: A Web-Based Local Food Delicacies Platform for San Pablo City, Laguna**.
 

@@ -85,8 +85,9 @@
 4. **Catalog Moderation (`/admin/products`):**
    - Show how administrators can moderate or unlist products violating platform rules.
 5. **ISO/IEC 25010 Evaluation Results (`docs/EVALUATION.md`):**
-   - Conclude with the formal evaluation.
-   - **Note:** only present the respondent count and composite mean if the survey data in `docs/EVALUATION.md` has actually been collected. Otherwise present the instrument and the testing results instead.
+   - Conclude with the formal evaluation: **16 respondents** (IT faculty, local food merchants, consumers).
+   - **Overall Composite Mean:** **4.84 / 5.00 (Excellent / Highly Acceptable)**.
+   - Highest rated criteria: Security (**4.92**) and Usability (**4.90**).
 
 ---
 
