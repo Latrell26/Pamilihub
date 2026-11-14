@@ -25,8 +25,12 @@ export default function SiteHeader({
       { href: "/seller/products", label: "Products" },
     ],
     admin: [
+      { href: "/admin/dashboard", label: "Dashboard" },
+      { href: "/admin/orders", label: "Orders" },
+      { href: "/admin/products", label: "Products" },
       { href: "/admin/sellers", label: "Approvals" },
       { href: "/admin/categories", label: "Categories" },
+      { href: "/admin/users", label: "Users" },
     ],
   };
 

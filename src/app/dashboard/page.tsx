@@ -37,9 +37,12 @@ export default async function DashboardPage() {
       { href: "/profile", label: "Store Account", desc: "Manage seller profile and store contact information", icon: "⚙️" },
     ],
     admin: [
+      { href: "/admin/dashboard", label: "Executive Dashboard", desc: "Platform metrics, order pipeline, and gross sales oversight", icon: "📊" },
+      { href: "/admin/orders", label: "Orders & Payments", desc: "Monitor live deliveries, transactions, and fulfillment states", icon: "📦" },
+      { href: "/admin/products", label: "Catalog Moderation", desc: "Moderate food listings across all San Pablo merchants", icon: "🥧" },
       { href: "/admin/sellers", label: "Merchant Approvals", desc: "Review and approve incoming local food merchant applications", icon: "🛡️" },
       { href: "/admin/categories", label: "Product Taxonomy", desc: "Manage platform delicacy categories", icon: "📂" },
-      { href: "/products", label: "Public Catalog", desc: "Monitor all active product listings across sellers", icon: "👀" },
+      { href: "/admin/users", label: "User Directory", desc: "Inspect registered customers, sellers, and system administrators", icon: "👥" },
     ],
   };
 

@@ -7,6 +7,7 @@ import {
   updateCategoryAction,
   deleteCategoryAction,
 } from "@/modules/catalog/actions";
+import AdminNav from "@/components/admin/AdminNav";
 
 type Category = {
   id: string;
@@ -100,6 +101,8 @@ export default function AdminCategoriesPage() {
           Manage product taxonomy (pies, pastries, kakanin, coffee, pasalubong)
         </p>
       </div>
+
+      <AdminNav />
 
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700">

@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sellerReviewSchema } from "@/modules/admin/schemas";
+import { sellerReviewSchema, adminDeleteProductSchema } from "@/modules/admin/schemas";
 import { requireAdmin } from "@/lib/auth/roles";
 import { revalidatePath } from "next/cache";
 
@@ -65,4 +65,39 @@ export async function reviewSellerAction(
 
   revalidatePath("/admin/sellers");
   return { success: true, message: `Seller ${action}d successfully.` };
+}
+
+/**
+ * Admin-only: moderate / remove a product listing across any seller.
+ */
+export async function adminDeleteProductAction(
+  _prevState: ActionState | null,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = createClient();
+  const user = await requireAdmin();
+  if (!user) {
+    return { success: false, message: "Admin access required." };
+  }
+
+  const parsed = adminDeleteProductSchema.safeParse({
+    product_id: formData.get("product_id"),
+  });
+
+  if (!parsed.success) {
+    return { success: false, message: "Invalid product ID." };
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", parsed.data.product_id);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  revalidatePath("/admin/products");
+  revalidatePath("/products");
+  return { success: true, message: "Product listing removed successfully." };
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { reviewSellerAction } from "@/modules/admin/actions";
+import AdminNav from "@/components/admin/AdminNav";
 
 type Seller = {
   id: string;
@@ -100,6 +101,8 @@ export default function AdminSellersPage() {
           </p>
         </div>
       </div>
+
+      <AdminNav />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
