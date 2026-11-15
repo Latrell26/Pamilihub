@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { StoreDetail } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
@@ -66,6 +66,8 @@ export function StoreMenuView({
 }) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory || "all");
+  const [isSticky, setIsSticky] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const isCustomer = userRole === "customer";
   const isGuest = !userRole;
@@ -91,6 +93,19 @@ export function StoreMenuView({
   }, [store.categories, filteredFoods]);
 
   const showCategoryTabs = store.categories.length >= 2;
+
+  // Detect when search bar reaches the top of the viewport
+  useEffect(() => {
+    const handleScroll = () => {
+      if (sentinelRef.current) {
+        const rect = sentinelRef.current.getBoundingClientRect();
+        setIsSticky(rect.top <= 14);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Scroll to initial category if specified on page load
   useEffect(() => {
@@ -151,18 +166,28 @@ export function StoreMenuView({
     .map((p) => ({ id: p.id, name: p.name, url: p.image_url as string }));
 
   return (
-    <div className="mx-auto max-w-5xl lg:px-8 lg:pt-6">
-      {/* Photo header with top floating back button */}
+    <div className="mx-auto max-w-5xl lg:px-8 lg:pt-6 relative">
+      {/*
+        The single, original fixed Back button.
+        Stays fixed in top-left position over the hero image, and when the user scrolls down,
+        it docks directly on the left side of the sticky search bar.
+      */}
+      <div className="fixed top-3 left-0 right-0 z-40 pointer-events-none">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/products"
+            aria-label="Back to all stores"
+            className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-foreground shadow-md border border-border/40 backdrop-blur-sm transition active:scale-90 hover:bg-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Photo header (NO duplicate back button here) */}
       <div className="relative h-52 overflow-hidden sm:h-64 lg:rounded-t-3xl">
         <HeroCollage photos={photos} />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/35 to-transparent" />
-        <Link
-          href="/products"
-          aria-label="Back to all stores"
-          className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-foreground shadow-md transition active:scale-90 hover:bg-white/90"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
       </div>
 
       {/* Sheet with curved top, overlapping the photos */}
@@ -247,22 +272,25 @@ export function StoreMenuView({
         {/* Target anchor for scrolling back to top of menu */}
         <div id="menu-top" className="scroll-mt-40" />
 
+        {/* Scroll sentinel to detect when search reaches the top */}
+        <div ref={sentinelRef} className="h-0 w-full" />
+
         {/*
           STICKY HEADER:
-          - Top Row: Back button (on the left) + Search bar (on the right)
+          - Top Row: Space for the fixed Back button on the left (when sticky) + Search bar (NO redundant back button inside!)
           - Bottom Row: Categories selector (down of back button and search bar)
           - Sticks to top-0 when user scrolls!
         */}
-        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 bg-background/95 backdrop-blur-md border-b border-border shadow-xs transition-all mt-6">
-          {/* Top Row: Back button on the left + Search bar */}
-          <div className="flex items-center gap-2.5 pt-3 pb-2">
-            <Link
-              href="/products"
-              aria-label="Back to all stores"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm hover:bg-muted active:scale-95 transition-transform"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur-md border-b border-border shadow-xs transition-all mt-6">
+          {/* Top Row: Search bar with space for the fixed back button when sticky */}
+          <div className="flex items-center gap-2.5 pt-3 pb-2 transition-all">
+            {/* When sticky, leaves room for the fixed back button to sit seamlessly on the left */}
+            {isSticky && (
+              <div
+                className="w-10 h-10 shrink-0 transition-all animate-in fade-in duration-200"
+                aria-hidden="true"
+              />
+            )}
 
             <div className="relative flex-1">
               <Search
