@@ -14,10 +14,11 @@ export default function SiteHeader({
 }>) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isStorePage = pathname.startsWith("/stores/");
   const { itemCount } = useCart();
 
-  // Hide header completely on login and register pages
-  if (isAuthPage) {
+  // Hide header completely on login, register, and store menu pages
+  if (isAuthPage || isStorePage) {
     return null;
   }
 

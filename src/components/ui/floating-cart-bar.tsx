@@ -9,6 +9,7 @@ export default function FloatingCartBar() {
   const pathname = usePathname();
   const { itemCount, subtotal } = useCart();
   const isProductDetailPage = pathname.startsWith("/products/") && pathname !== "/products";
+  const isStorePage = pathname.startsWith("/stores/");
 
   // Don't show floating cart if empty, or on cart/checkout/auth/product-detail pages
   if (
@@ -23,7 +24,11 @@ export default function FloatingCartBar() {
   }
 
   return (
-    <div className="fixed bottom-16 sm:bottom-6 left-0 right-0 z-30 px-4 pointer-events-none md:hidden animate-in slide-in-from-bottom-5 duration-200">
+    <div
+      className={`fixed ${
+        isStorePage ? "bottom-4" : "bottom-16 sm:bottom-6"
+      } left-0 right-0 z-30 px-4 pointer-events-none md:hidden animate-in slide-in-from-bottom-5 duration-200`}
+    >
       <Link
         href="/cart"
         className="pointer-events-auto flex items-center justify-between gap-3 w-full max-w-md mx-auto p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/25 border border-primary/20 active:scale-[0.98] transition-transform"

@@ -23,9 +23,10 @@ export default function MobileBottomNav({
   const pathname = usePathname();
   const { itemCount } = useCart();
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isStorePage = pathname.startsWith("/stores/");
 
-  // Hide mobile bottom navigation only on login and register pages
-  if (isAuthPage) {
+  // Hide mobile bottom navigation on login, register, and store menu pages
+  if (isAuthPage || isStorePage) {
     return null;
   }
 

@@ -14,6 +14,8 @@ type AddToCartButtonProps = {
   sellerName: string;
   imageUrl: string | null;
   size?: "sm" | "md";
+  /** "fab" = small round + button for menu rows. Default = full-width button. */
+  variant?: "default" | "fab";
   /** Current user role — only customer can see and use. */
   userRole?: string | null;
 };
@@ -27,6 +29,7 @@ export function AddToCartButton({
   sellerName,
   imageUrl,
   size = "md",
+  variant = "default",
   userRole,
 }: AddToCartButtonProps) {
   const { addItem, items } = useCart();
@@ -39,6 +42,56 @@ export function AddToCartButton({
 
   const inCartQty = items.find((i) => i.productId === productId)?.quantity ?? 0;
   const isMaxReached = stock > 0 && inCartQty >= stock;
+
+  // Round "+" button used on menu rows
+  if (variant === "fab") {
+    if (stock === 0) return null;
+
+    const fabBase =
+      "flex h-9 w-9 items-center justify-center rounded-full shadow-md ring-1 ring-black/5 transition active:scale-90";
+
+    if (isMaxReached) {
+      return (
+        <button
+          type="button"
+          disabled
+          aria-label={`${name}: maximum stock already in cart`}
+          className={`${fabBase} cursor-not-allowed bg-white/80 text-muted-foreground`}
+        >
+          <Check className="h-4 w-4" strokeWidth={2.5} />
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        aria-label={`Add ${name} to cart`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (inCartQty >= stock) return;
+          addItem({ productId, name, price, stock, sellerId, sellerName, imageUrl });
+          setAdded(true);
+          setTimeout(() => setAdded(false), 1200);
+        }}
+        className={`${fabBase} ${
+          added ? "bg-emerald-600 text-white" : "bg-white text-foreground hover:bg-white/90"
+        }`}
+      >
+        {added ? (
+          <Check className="h-4 w-4" strokeWidth={3} />
+        ) : (
+          <Plus className="h-5 w-5" strokeWidth={2.5} />
+        )}
+        {inCartQty > 0 && !added && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-primary-foreground">
+            {inCartQty}
+          </span>
+        )}
+      </button>
+    );
+  }
 
   if (stock === 0) {
     return (
