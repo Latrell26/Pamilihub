@@ -300,6 +300,17 @@ export async function getApprovedStores({
       .map((id) => ({ id, name: catMap.get(id) ?? "Other" }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
+    // Prioritize products with photos so the store card gets the best representative photo
+    const sampleProducts = [...allProducts]
+      .sort((a, b) => (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0))
+      .slice(0, 3)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        image_url: p.image_url,
+      }));
+
     result.push({
       id: seller.id,
       store_name: seller.store_name,
@@ -310,12 +321,7 @@ export async function getApprovedStores({
       matchingFoodNames,
       matchedByStoreName,
       categories: storeCategories,
-      sampleProducts: allProducts.slice(0, 3).map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: Number(p.price),
-        image_url: p.image_url,
-      })),
+      sampleProducts,
     });
   }
 

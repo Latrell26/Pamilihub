@@ -4,7 +4,15 @@ import {
   StoreListItem,
 } from "@/modules/catalog/queries";
 import Link from "next/link";
-import { Search, Bike, MapPin, Store, UtensilsCrossed, X, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Bike,
+  MapPin,
+  UtensilsCrossed,
+  X,
+  BadgeCheck,
+  Clock,
+} from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, string> = {
   pies: "🥧",
@@ -25,6 +33,44 @@ function getCategoryIcon(name: string) {
 }
 
 const DELIVERY_FEE = 50;
+
+/** Hero image area: single photo symbolizing the store. */
+function StoreHero({ store }: { store: StoreListItem }) {
+  const photo = store.sampleProducts.find((p) => p.image_url);
+
+  return (
+    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-muted">
+      <div className="h-full w-full transition-transform duration-300 group-hover:scale-[1.03]">
+        {photo?.image_url ? (
+          <img
+            src={photo.image_url}
+            alt={`${store.store_name} - ${photo.name}`}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-primary/15 via-accent/30 to-primary/5 p-4 text-center">
+            <span className="text-5xl">
+              {getCategoryIcon(store.categories[0]?.name ?? "")}
+            </span>
+            <span className="text-xs font-bold text-foreground/85 line-clamp-1">
+              {store.store_name}
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              San Pablo Maker
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Verified badge (bottom-right) */}
+      <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm shadow-sm">
+        <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+        Verified
+      </span>
+    </div>
+  );
+}
 
 export default async function StoresCatalogPage({
   searchParams,
@@ -62,48 +108,49 @@ export default async function StoresCatalogPage({
     ? `/products?category=${encodeURIComponent(categoryId)}`
     : "/products";
 
+  const chipBase =
+    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold shadow-sm transition active:scale-95";
+  const chipIdle =
+    "border-border bg-card text-foreground hover:bg-muted";
+  const chipActive =
+    "border-primary bg-primary/10 text-primary";
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
-      {/* Search Header */}
-      <form method="GET" className="relative flex items-center">
-        <Search
-          className="absolute left-4 h-5 w-5 text-muted-foreground pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          name="search"
-          defaultValue={search ?? ""}
-          placeholder="Search stores or delicacies (e.g., Lola Mayas, buko pie, coffee)"
-          aria-label="Search stores or delicacies"
-          maxLength={80}
-          className="w-full h-12 rounded-full bg-muted pl-12 pr-24 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:bg-background transition-colors"
-        />
-        {categoryId && <input type="hidden" name="category" value={categoryId} />}
-        <button
-          type="submit"
-          className="absolute right-1.5 h-9 px-4 rounded-full bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 active:scale-95 transition"
-        >
-          Search
-        </button>
-      </form>
+    <div className="mx-auto max-w-7xl lg:px-8 lg:py-6 mb-8">
+      {/* Pink search header */}
+      <section className="bg-primary px-4 pb-14 pt-4 sm:px-6 lg:rounded-3xl">
+        <form method="GET" className="relative flex items-center">
+          <Search
+            className="pointer-events-none absolute left-4 h-5 w-5 text-white/90"
+            aria-hidden="true"
+          />
+          <input
+            name="search"
+            defaultValue={search ?? ""}
+            placeholder="Search for stores and delicacies"
+            aria-label="Search stores or delicacies"
+            maxLength={80}
+            className="h-12 w-full rounded-full bg-black/20 pl-12 pr-24 text-sm text-white placeholder:text-white/85 shadow-inner focus:bg-black/30 focus:outline-none focus:ring-2 focus:ring-white/70"
+          />
+          {categoryId && <input type="hidden" name="category" value={categoryId} />}
+          <button
+            type="submit"
+            className="absolute right-1.5 h-9 rounded-full bg-white px-4 text-xs font-extrabold text-primary transition active:scale-95 hover:bg-white/90"
+          >
+            Search
+          </button>
+        </form>
 
-      {/* Delivery promo strip */}
-      <div className="flex items-center gap-3 rounded-2xl bg-primary px-4 py-3 text-primary-foreground shadow-sm">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
-          <Bike className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-extrabold leading-tight">
-            Flat ₱{DELIVERY_FEE} delivery fee per store
-          </p>
-          <p className="text-xs text-primary-foreground/85 leading-tight mt-0.5">
-            Discover verified San Pablo food makers and explore their specialty menus
-          </p>
-        </div>
-      </div>
+        <p className="mt-3 flex items-center gap-2 px-1 text-xs font-medium text-white/90">
+          <Bike className="h-4 w-4 shrink-0" aria-hidden="true" />
+          Flat ₱{DELIVERY_FEE} delivery fee per store, from verified San Pablo food makers
+        </p>
+      </section>
 
-      {/* Category tiles (R4) */}
-      <nav aria-label="Delicacy Categories">
+      {/* White sheet overlapping the header */}
+      <section className="-mt-8 bg-background px-4 pb-8 pt-4 sm:px-6 lg:rounded-b-3xl">
+        {/* Category chips (R4) */}
+        <nav aria-label="Delicacy Categories">
         <ul
           className="
             flex gap-4 overflow-x-auto no-scrollbar pt-1 pb-1
@@ -150,7 +197,7 @@ export default async function StoresCatalogPage({
                 >
                   <span
                     className={`flex h-14 w-14 items-center justify-center rounded-full text-2xl transition ${
-                      isActive
+isActive
                         ? "bg-primary/15 ring-1 ring-primary"
                         : "bg-muted group-hover:bg-primary/10"
                     }`}
@@ -171,187 +218,151 @@ export default async function StoresCatalogPage({
         </ul>
       </nav>
 
-      {/* Heading + active filter chips */}
-      <div className="space-y-2.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h1 className="text-lg sm:text-xl font-extrabold text-foreground">
-            {activeCategory ? `${activeCategory.name} Stores` : "Local Food Stores"}
-          </h1>
-          <span className="text-xs text-muted-foreground shrink-0">
-            {stores.length} {stores.length === 1 ? "store" : "stores"}
-          </span>
+        {/* Heading + active filter chips */}
+        <div className="mt-2 space-y-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h1 className="text-lg font-extrabold text-foreground sm:text-xl">
+              {activeCategory ? `${activeCategory.name} Stores` : "Local Food Stores"}
+            </h1>
+            <span className="shrink-0 text-xs text-muted-foreground">
+              {stores.length} {stores.length === 1 ? "store" : "stores"}
+            </span>
+          </div>
+
+          {(search || activeCategory) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {search && (
+                <Link
+                  href={clearSearchHref}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+                >
+                  <span className="max-w-[180px] truncate">&ldquo;{search}&rdquo;</span>
+                  <X className="h-3.5 w-3.5" aria-label="Clear search" />
+                </Link>
+              )}
+              {activeCategory && (
+                <Link
+                  href={allHref}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+                >
+                  <span>{activeCategory.name}</span>
+                  <X className="h-3.5 w-3.5" aria-label="Clear category" />
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
-        {(search || activeCategory) && (
-          <div className="flex flex-wrap items-center gap-2">
-            {search && (
+        {/* Store cards */}
+        <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
+          {stores.map((store: StoreListItem) => {
+            // R3: Store card -> store page link:
+            // ALWAYS carry `category` when set.
+            // Carry `search` ONLY when the store matched through a food name (matches.length > 0).
+            // A store that matched by its own name must open its FULL menu.
+            const params = new URLSearchParams();
+            if (categoryId) {
+              params.set("category", categoryId);
+            }
+            if (search && !store.matchedByStoreName && store.matchingFoodNames.length > 0) {
+              params.set("search", search);
+            }
+            const queryStr = params.toString();
+            const storeHref = `/stores/${store.id}${queryStr ? `?${queryStr}` : ""}`;
+
+            const showMatch =
+              !!search && store.matchingFoodNames.length > 0 && !store.matchedByStoreName;
+
+            return (
               <Link
-                href={clearSearchHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 pl-3 pr-2 py-1 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
+                key={store.id}
+                href={storeHref}
+                className="group block space-y-2.5 active:scale-[0.99] transition-transform"
               >
-                <span className="truncate max-w-[180px]">&ldquo;{search}&rdquo;</span>
-                <X className="h-3.5 w-3.5" aria-label="Clear search" />
-              </Link>
-            )}
-            {activeCategory && (
-              <Link
-                href={allHref}
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 pl-3 pr-2 py-1 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
-              >
-                <span>{activeCategory.name}</span>
-                <X className="h-3.5 w-3.5" aria-label="Clear category" />
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
+                <StoreHero store={store} />
 
-      {/* Store Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {stores.map((store: StoreListItem) => {
-          // R3: Store card -> store page link:
-          // ALWAYS carry `category` when set.
-          // Carry `search` ONLY when the store matched through a food name (matches.length > 0).
-          // A store that matched by its own name must open its FULL menu.
-          const params = new URLSearchParams();
-          if (categoryId) {
-            params.set("category", categoryId);
-          }
-          if (search && !store.matchedByStoreName && store.matchingFoodNames.length > 0) {
-            params.set("search", search);
-          }
-          const queryStr = params.toString();
-          const storeHref = `/stores/${store.id}${queryStr ? `?${queryStr}` : ""}`;
-
-          return (
-            <Link
-              key={store.id}
-              href={storeHref}
-              className="group block rounded-2xl border border-border bg-card p-5 shadow-sm hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.99]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3.5 min-w-0">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-xl shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Store className="h-6 w-6" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 space-y-0.5">
-                    <h2 className="text-base font-extrabold text-foreground group-hover:text-primary transition-colors truncate">
-                      {store.store_name}
-                    </h2>
-                    {store.location && (
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground truncate">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-                        <span className="truncate">{store.location}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary">
-                  ₱{DELIVERY_FEE} delivery
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-3 leading-relaxed">
-                {store.description || "Freshly made local delicacies from San Pablo City."}
-              </p>
-
-              {/* Matching food badge if matched via food search */}
-              {search && store.matchingFoodNames.length > 0 && !store.matchedByStoreName && (
-                <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-[11px] text-amber-800 dark:text-amber-300 font-medium flex items-center gap-1.5">
-                  <span className="font-bold">Matching item:</span>
-                  <span className="truncate">{store.matchingFoodNames.join(", ")}</span>
-                </div>
-              )}
-
-              {/* Store sample delicacy previews */}
-              {store.sampleProducts.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border/60">
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-2">
-                    <span className="font-semibold flex items-center gap-1">
-                      <UtensilsCrossed className="h-3.5 w-3.5 text-primary" />
-                      Featured Menu
+                {/* Name + item count (item count sits where the rating sits) */}
+                <div className="flex items-start justify-between gap-3 px-0.5">
+                  <h2 className="min-w-0 text-base font-extrabold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-lg">
+                    <span className="line-clamp-2">{store.store_name}</span>
+                  </h2>
+                  <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 text-sm font-bold text-foreground">
+                    <UtensilsCrossed className="h-4 w-4 text-primary" aria-hidden="true" />
+                    {store.productCount}
+                    <span className="font-medium text-muted-foreground">
+                      {store.productCount === 1 ? "item" : "items"}
                     </span>
-                    <span>{store.productCount} {store.productCount === 1 ? "delicacy" : "delicacies"}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {store.sampleProducts.map((prod) => (
-                      <div
-                        key={prod.id}
-                        className="rounded-lg bg-muted/50 p-2 text-center flex flex-col items-center justify-center gap-1"
-                      >
-                        {prod.image_url ? (
-                          <img
-                            src={prod.image_url}
-                            alt={prod.name}
-                            className="h-10 w-full object-cover rounded"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <span className="text-base">🥧</span>
-                        )}
-                        <span className="text-[10px] font-bold text-foreground line-clamp-1 w-full">
-                          {prod.name}
-                        </span>
-                        <span className="text-[10px] font-semibold text-primary">
-                          ₱{prod.price.toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  </span>
                 </div>
-              )}
 
-              {/* Category pills + CTA */}
-              <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-1.5 min-w-0">
-                  {store.categories.slice(0, 2).map((cat) => (
-                    <span
-                      key={cat.id}
-                      className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground truncate"
-                    >
-                      {cat.name}
-                    </span>
-                  ))}
-                  {store.categories.length > 2 && (
-                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      +{store.categories.length - 2}
+                {/* Meta line: location and categories */}
+                <p className="flex min-w-0 items-center gap-1.5 px-0.5 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden="true" />
+                  <span className="truncate">
+                    {store.location || "San Pablo City"}
+                    {store.categories.length > 0 &&
+                      ` • ${store.categories
+                        .slice(0, 2)
+                        .map((c) => c.name)
+                        .join(", ")}${store.categories.length > 2 ? ` +${store.categories.length - 2}` : ""}`}
+                  </span>
+                </p>
+
+                {/* Delivery line */}
+                <p className="flex items-center gap-1.5 px-0.5 text-sm font-semibold text-foreground">
+                  <Bike className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  ₱{DELIVERY_FEE}
+                  <span className="mx-0.5 text-muted-foreground">•</span>
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <span className="font-medium text-muted-foreground">Made fresh to order</span>
+                </p>
+
+                {/* Pink pills, like the promo pills in the reference */}
+                <div className="flex flex-wrap gap-2 px-0.5">
+                  {showMatch && (
+                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary">
+                      <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{store.matchingFoodNames.join(", ")}</span>
                     </span>
                   )}
+                  {store.sampleProducts.slice(0, showMatch ? 1 : 2).map((p) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary"
+                    >
+                      {p.name}
+                      <span className="font-bold text-primary/80">₱{p.price.toFixed(0)}</span>
+                    </span>
+                  ))}
                 </div>
-
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-0.5 transition-transform shrink-0">
-                  View menu <ChevronRight className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Empty State */}
-      {stores.length === 0 && (
-        <div className="mx-auto max-w-sm py-16 text-center space-y-3">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
-            🏪
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-base font-extrabold text-foreground">
-              No local stores found
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Try searching with another store or food keyword, or clear your filters to view all available stores.
-            </p>
-          </div>
-          <Link
-            href="/products"
-            className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground hover:bg-primary/90 active:scale-95 transition"
-          >
-            Clear filters
-          </Link>
+              </Link>
+            );
+          })}
         </div>
-      )}
+
+        {/* Empty State */}
+        {stores.length === 0 && (
+          <div className="mx-auto max-w-sm space-y-3 py-16 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
+              🏪
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-base font-extrabold text-foreground">
+                No local stores found
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Try another store or food keyword, or clear your filters to see all stores.
+              </p>
+            </div>
+            <Link
+              href="/products"
+              className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground transition active:scale-95 hover:bg-primary/90"
+            >
+              Clear filters
+            </Link>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
