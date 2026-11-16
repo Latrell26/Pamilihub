@@ -39,7 +39,7 @@ function StoreHero({ store }: { store: StoreListItem }) {
   const photo = store.sampleProducts.find((p) => p.image_url);
 
   return (
-    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-muted">
+    <div className="relative aspect-[12/6] w-full overflow-hidden rounded-2xl bg-muted">
       <div className="h-full w-full transition-transform duration-300 group-hover:scale-[1.03]">
         {photo?.image_url ? (
           <img
@@ -119,27 +119,31 @@ export default async function StoresCatalogPage({
     <div className="mx-auto max-w-7xl lg:px-8 lg:py-6 mb-8">
       {/* Pink search header */}
       <section className="bg-primary px-4 pb-14 pt-4 sm:px-6 lg:rounded-3xl">
-        <form method="GET" className="relative flex items-center">
+        <Link
+          href={search ? `/search?from=delicacies&q=${encodeURIComponent(search)}` : "/search?from=delicacies"}
+          className="group relative flex w-full cursor-pointer items-center"
+        >
           <Search
             className="pointer-events-none absolute left-4 h-5 w-5 text-white/90"
             aria-hidden="true"
           />
-          <input
-            name="search"
-            defaultValue={search ?? ""}
-            placeholder="Search for stores and delicacies"
-            aria-label="Search stores or delicacies"
-            maxLength={80}
-            className="h-12 w-full rounded-full bg-black/20 pl-12 pr-24 text-sm text-white placeholder:text-white/85 shadow-inner focus:bg-black/30 focus:outline-none focus:ring-2 focus:ring-white/70"
-          />
-          {categoryId && <input type="hidden" name="category" value={categoryId} />}
-          <button
-            type="submit"
-            className="absolute right-1.5 h-9 rounded-full bg-white px-4 text-xs font-extrabold text-primary transition active:scale-95 hover:bg-white/90"
+          <div
+            className="flex h-12 w-full items-center rounded-full bg-black/20 pl-12 pr-24 text-sm text-white/90 shadow-inner transition-colors group-hover:bg-black/25"
+          >
+            {search ? (
+              <span className="truncate font-medium text-white">{search}</span>
+            ) : (
+              <span className="truncate text-white/85">
+                Search for stores and delicacies
+              </span>
+            )}
+          </div>
+          <span
+            className="absolute right-1.5 flex h-9 items-center justify-center rounded-full bg-white px-4 text-xs font-extrabold text-primary shadow-sm transition active:scale-95 group-hover:bg-white/90"
           >
             Search
-          </button>
-        </form>
+          </span>
+        </Link>
 
         <p className="mt-3 flex items-center gap-2 px-1 text-xs font-medium text-white/90">
           <Bike className="h-4 w-4 shrink-0" aria-hidden="true" />

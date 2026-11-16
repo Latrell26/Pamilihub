@@ -7,6 +7,7 @@ import {
   updateProductAction,
   deleteProductAction,
 } from "@/modules/catalog/actions";
+import SellerProductsLoading from "./loading";
 
 type Product = {
   id: string;
@@ -118,11 +119,7 @@ export default function SellerProductsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center p-6">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading merchant products...</div>
-      </div>
-    );
+    return <SellerProductsLoading />;
   }
 
   const inStockCount = products.filter((p) => p.stock > 0).length;

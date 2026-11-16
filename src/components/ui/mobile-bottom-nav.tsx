@@ -1,7 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { HeaderUser } from "@/lib/auth/header-user";
 import { useCart } from "@/lib/cart/cart-context";
 import {
@@ -13,20 +14,40 @@ import {
   Store,
   ShieldCheck,
   FolderKanban,
+  Search,
 } from "lucide-react";
 
-export default function MobileBottomNav({
+function MobileBottomNavContent({
   user,
 }: {
   user: HeaderUser | null;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { itemCount } = useCart();
+
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isStorePage = pathname.startsWith("/stores/");
+  const isCheckoutPage = pathname.startsWith("/checkout");
 
-  // Hide mobile bottom navigation on login, register, and store menu pages
-  if (isAuthPage || isStorePage) {
+  const fromParam = searchParams.get("from");
+  const storeIdParam = searchParams.get("storeId") || searchParams.get("store");
+
+  const isSearchPage = pathname.startsWith("/search");
+  const isReorderCart =
+    pathname.startsWith("/cart") &&
+    (searchParams.get("reorder") === "1" || searchParams.has("reorder"));
+  // Erase the mobile navbar if user clicked the searchbar in delicacies or in stores.
+  // Do NOT erase it when user clicked the icon searchbar in the navbar (e.g. from === "nav").
+  const hideOnSearch =
+    isSearchPage &&
+    (fromParam === "delicacies" ||
+      fromParam === "bar" ||
+      fromParam === "store" ||
+      Boolean(storeIdParam));
+
+  // Hide mobile bottom navigation on login, register, store menu pages, checkout, search page when opened via searchbar, and reorder cart
+  if (isAuthPage || isStorePage || isCheckoutPage || hideOnSearch || isReorderCart) {
     return null;
   }
 
@@ -50,43 +71,61 @@ export default function MobileBottomNav({
     : [
         { href: "/products", label: "Delicacies", icon: Utensils, badge: undefined },
         { href: "/cart", label: "Cart", icon: ShoppingBag, badge: itemCount },
+        { href: "/search?from=nav", label: "Search", icon: Search, badge: undefined },
         { href: "/orders", label: "Orders", icon: Receipt, badge: undefined },
         { href: user ? "/profile" : "/login", label: user ? "Account" : "Sign In", icon: User, badge: undefined },
       ];
 
-  const gridCols = isSeller ? "grid-cols-3" : "grid-cols-4";
+  const gridCols = isSeller ? "grid-cols-3" : isAdmin ? "grid-cols-4" : "grid-cols-5";
 
   return (
+    /*
+      Floating pill, Foodpanda-style.
+      Height = 4rem (h-16) + bottom gap, which is what --bottom-nav-h
+      in globals.css accounts for, so the cart/checkout bars sit above it.
+    */
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-border shadow-lg safe-bottom"
+      className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pointer-events-none"
       aria-label="Mobile and Tablet Navigation"
     >
-      <div className={`grid ${gridCols} h-14 max-w-lg mx-auto items-center px-1`}>
+      <div
+        className={`pointer-events-auto mx-auto grid ${gridCols} h-16 max-w-lg items-stretch gap-1 rounded-full border border-border/60 bg-card/95 p-1.5 shadow-[0_6px_24px_rgba(0,0,0,0.12)] backdrop-blur-lg`}
+      >
         {navItems.map((item) => {
+          const basePath = item.href.split("?")[0];
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            pathname === basePath ||
+            (basePath !== "/" && pathname.startsWith(basePath));
           const Icon = item.icon;
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl transition-all ${
+              aria-current={isActive ? "page" : undefined}
+              className={`flex flex-col items-center justify-center gap-0.5 rounded-full px-1 transition-all active:scale-95 ${
                 isActive
-                  ? "text-primary font-bold"
+                  ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="relative">
-                <Icon className="w-5 h-5 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                <Icon
+                  className="h-5 w-5 shrink-0"
+                  strokeWidth={isActive ? 2.5 : 2}
+                  aria-hidden="true"
+                />
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground shadow-sm">
+                  <span className="absolute -right-3 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-foreground px-1 text-[11px] font-black leading-none text-background shadow-sm">
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] leading-tight tracking-tight font-medium truncate max-w-[64px] text-center">
+              <span
+                className={`max-w-[72px] truncate text-center text-[11px] leading-tight tracking-tight ${
+                  isActive ? "font-extrabold" : "font-semibold"
+                }`}
+              >
                 {item.label}
               </span>
             </Link>
@@ -94,5 +133,17 @@ export default function MobileBottomNav({
         })}
       </div>
     </nav>
+  );
+}
+
+export default function MobileBottomNav({
+  user,
+}: {
+  user: HeaderUser | null;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <MobileBottomNavContent user={user} />
+    </Suspense>
   );
 }

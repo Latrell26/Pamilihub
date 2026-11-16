@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
 
 type PayButtonProps = {
   orderId: string;
@@ -50,8 +51,11 @@ export default function PayButton({ orderId, amount }: PayButtonProps) {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700 text-center space-y-2">
-        <p className="font-semibold">{error}</p>
+      <div className="rounded-2xl bg-red-500/10 border border-red-200 dark:border-red-900/50 p-4 text-xs text-red-600 dark:text-red-400 space-y-2 text-center">
+        <div className="flex items-center justify-center gap-2 font-bold">
+          <AlertCircle className="h-4 w-4" />
+          <span>{error}</span>
+        </div>
         <button
           onClick={() => setError("")}
           className="text-xs text-primary font-bold hover:underline"
@@ -63,32 +67,44 @@ export default function PayButton({ orderId, amount }: PayButtonProps) {
   }
 
   return (
-    <div className="space-y-4 pt-2">
+    <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Green Success Approve Button */}
         <button
+          type="button"
           onClick={() => handlePay("approve")}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary hover:bg-primary/90 active:scale-[0.98] px-4 py-3.5 text-xs font-bold text-white shadow-sm transition-all disabled:opacity-50 cursor-pointer"
         >
           {loading && result === "approve" ? (
-            <span>Approving...</span>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Approving Payment…</span>
+            </>
           ) : (
             <>
-              <span>✓ Approve Payment</span>
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Approve Payment</span>
             </>
           )}
         </button>
 
+        {/* Red Error/Decline Cancel Button */}
         <button
+          type="button"
           onClick={() => handlePay("cancel")}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-xs font-bold hover:bg-red-100 disabled:opacity-50 transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/70 text-red-600 dark:text-red-400 active:scale-[0.98] px-4 py-3.5 text-xs font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
         >
           {loading && result === "cancel" ? (
-            <span>Cancelling...</span>
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Cancelling…</span>
+            </>
           ) : (
             <>
-              <span>✕ Cancel Payment</span>
+              <XCircle className="h-4 w-4" />
+              <span>Cancel / Decline</span>
             </>
           )}
         </button>

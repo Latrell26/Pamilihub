@@ -8,6 +8,7 @@ import {
   deleteCategoryAction,
 } from "@/modules/catalog/actions";
 import AdminNav from "@/components/admin/AdminNav";
+import AdminLoading from "../loading";
 
 type Category = {
   id: string;
@@ -82,11 +83,7 @@ export default function AdminCategoriesPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center p-6">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading categories...</div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   return (

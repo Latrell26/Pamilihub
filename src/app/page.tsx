@@ -58,14 +58,15 @@ export default async function HomePage() {
     <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-8">
       {/* PWA Mobile Search Header (Foodpanda style) */}
       <div className="relative">
-        <form action="/products" method="GET" className="relative flex items-center">
-          <input
-            name="search"
-            placeholder="Search local delicacies, buko pie, espasol..."
-            className="w-full rounded-2xl border border-border bg-card pl-11 pr-24 py-3 sm:py-3.5 text-xs sm:text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-          />
+        <Link
+          href="/search"
+          className="group relative flex w-full cursor-pointer items-center"
+        >
+          <div className="flex w-full items-center rounded-2xl border border-border bg-card py-3 pl-11 pr-24 text-xs text-muted-foreground shadow-sm transition-all group-hover:bg-muted/40 sm:py-3.5 sm:text-sm">
+            <span>Search local delicacies, buko pie, espasol...</span>
+          </div>
           <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground"
+            className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-hover:text-primary sm:h-5 sm:w-5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -78,13 +79,12 @@ export default async function HomePage() {
               d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.65 10.65Z"
             />
           </svg>
-          <button
-            type="submit"
-            className="absolute right-2 px-3.5 py-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"
+          <span
+            className="absolute right-2 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-all active:scale-95 group-hover:bg-primary/90"
           >
             Find Food
-          </button>
-        </form>
+          </span>
+        </Link>
       </div>
 
       {/* Hero Food App Card */}

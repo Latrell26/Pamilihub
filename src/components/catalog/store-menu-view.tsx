@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 const DELIVERY_FEE = 50;
-const LOW_STOCK_THRESHOLD = 5;
 
 /** Photo collage for the top of the page (up to 4 menu photos). */
 function HeroCollage({ photos }: { photos: { id: string; name: string; url: string }[] }) {
@@ -58,11 +57,15 @@ export function StoreMenuView({
   userRole,
   initialSearch = "",
   initialCategory,
+  fromSearch = false,
+  searchQueryParam,
 }: {
   store: StoreDetail;
   userRole?: string | null;
   initialSearch?: string;
   initialCategory?: string;
+  fromSearch?: boolean;
+  searchQueryParam?: string;
 }) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeCategory, setActiveCategory] = useState<string>(initialCategory || "all");
@@ -71,6 +74,12 @@ export function StoreMenuView({
 
   const isCustomer = userRole === "customer";
   const isGuest = !userRole;
+
+  // Persist current active store details for reference
+  useEffect(() => {
+    localStorage.setItem("pamilihub_active_store", store.id);
+    localStorage.setItem("pamilihub_active_store_name", store.store_name);
+  }, [store.id, store.store_name]);
 
   // Filter foods by name only (R6)
   const trimmedSearch = searchQuery.trim().toLowerCase();
@@ -175,8 +184,14 @@ export function StoreMenuView({
       <div className="fixed top-3 left-0 right-0 z-40 pointer-events-none">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <Link
-            href="/products"
-            aria-label="Back to all stores"
+            href={
+              fromSearch
+                ? searchQueryParam
+                  ? `/search?q=${encodeURIComponent(searchQueryParam)}`
+                  : "/search"
+                : "/products"
+            }
+            aria-label={fromSearch ? "Back to search" : "Back to all stores"}
             className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-foreground shadow-md border border-border/40 backdrop-blur-sm transition active:scale-90 hover:bg-white"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -191,7 +206,7 @@ export function StoreMenuView({
       </div>
 
       {/* Sheet with curved top, overlapping the photos */}
-      <div className="relative -mt-6 rounded-t-[2rem] bg-background px-4 pb-12 pt-12 sm:px-6 lg:rounded-none">
+      <div className="relative -mt-6 rounded-t-[2rem] bg-background px-4 pb-6 pt-12 sm:px-6 lg:rounded-none">
         {/* Round logo: first menu photo, or a store icon */}
         <div className="absolute -top-9 left-1/2 flex h-[4.5rem] w-[4.5rem] -translate-x-1/2 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-primary/10 text-primary shadow-md">
           {photos[0] ? (
@@ -217,10 +232,6 @@ export function StoreMenuView({
           <p className="flex items-center justify-center gap-1.5 text-xs font-bold text-primary">
             <BadgeCheck className="h-4 w-4" aria-hidden="true" />
             Verified local maker
-            <span className="text-muted-foreground">•</span>
-            <span className="font-semibold text-muted-foreground">
-              {store.products.length} {store.products.length === 1 ? "item" : "items"}
-            </span>
           </p>
         </header>
 
@@ -277,64 +288,52 @@ export function StoreMenuView({
 
         {/*
           STICKY HEADER:
-          - Top Row: Space for the fixed Back button on the left (when sticky) + Search bar (NO redundant back button inside!)
+          - Top Row: Space for the fixed Back button on the left (when sticky) + Search bar (with curve and top shadow)
           - Bottom Row: Categories selector (down of back button and search bar)
           - Sticks to top-0 when user scrolls!
         */}
-        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur-md border-b border-border shadow-xs transition-all mt-6">
+        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur-md mt-6">
           {/* Top Row: Search bar with space for the fixed back button when sticky */}
-          <div className="flex items-center gap-2.5 pt-3 pb-2 transition-all">
+          <div className="flex items-center gap-3 pt-3.5 pb-2 transition-all">
             {/* When sticky, leaves room for the fixed back button to sit seamlessly on the left */}
             {isSticky && (
               <div
-                className="w-10 h-10 shrink-0 transition-all animate-in fade-in duration-200"
+                className="w-11 h-11 shrink-0 transition-all animate-in fade-in duration-200"
                 aria-hidden="true"
               />
             )}
 
-            <div className="relative flex-1">
+            <Link
+              href={`/search?from=store&storeId=${store.id}&storeName=${encodeURIComponent(store.store_name)}`}
+              className="group relative flex-1 flex items-center cursor-pointer"
+              aria-label={`Search delicacies in ${store.store_name}`}
+            >
               <Search
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors"
                 aria-hidden="true"
               />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search menu"
-                aria-label="Search menu"
-                maxLength={80}
-                className="h-10 w-full rounded-full bg-muted pl-10 pr-9 text-xs sm:text-sm text-foreground shadow-inner placeholder:text-muted-foreground transition-colors focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+              <div className="h-11 w-full rounded-full bg-muted/80 pl-10 pr-10 text-sm text-muted-foreground flex items-center shadow-inner transition-colors group-hover:bg-muted group-hover:text-foreground">
+                Search in {store.store_name}...
+              </div>
+            </Link>
           </div>
 
-          {/* Bottom Row: Categories selector (down of back button and search bar) */}
+          {/* Bottom Row: Categories selector (no line below search bar; bottom line aligns with tab underline) */}
           {showCategoryTabs && (
             <nav
               aria-label="Store menu categories"
-              className="border-t border-border/50 py-1"
+              className="pt-0.5 pb-0"
             >
-              <ul className="no-scrollbar flex gap-5 overflow-x-auto py-1">
+              <ul className="flex gap-6 overflow-x-auto border-b border-border py-0 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <li className="shrink-0">
                   <button
                     type="button"
                     onClick={() => handleCategoryClick("all")}
                     aria-current={activeCategory === "all" ? "page" : undefined}
-                    className={`block border-b-[3px] pb-1.5 text-sm font-extrabold transition-colors cursor-pointer ${
+                    className={`block border-b-[3px] pb-2 text-sm font-extrabold transition-colors cursor-pointer -mb-px ${
                       activeCategory === "all"
                         ? "border-primary text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
+                        : "border-transparent text-muted-background "
                     }`}
                   >
                     All items
@@ -348,10 +347,10 @@ export function StoreMenuView({
                         type="button"
                         onClick={() => handleCategoryClick(cat.id)}
                         aria-current={isActive ? "page" : undefined}
-                        className={`block border-b-[3px] pb-1.5 text-sm font-extrabold transition-colors cursor-pointer ${
+                        className={`block border-b-[3px] pb-2 text-sm font-extrabold transition-colors cursor-pointer -mb-px ${
                           isActive
                             ? "border-primary text-foreground"
-                            : "border-transparent text-muted-foreground hover:text-foreground"
+                            : "border-transparent text-muted-background"
                         }`}
                       >
                         {cat.name}
@@ -395,20 +394,14 @@ export function StoreMenuView({
                 aria-label={section.name}
                 className="pt-3 scroll-mt-32"
               >
-                <div className="flex items-baseline justify-between mb-3">
+                <div className="mb-3">
                   <h2 className="text-xl font-black tracking-tight text-foreground">
                     {section.name}
                   </h2>
-                  <span className="text-xs text-muted-foreground">
-                    {section.items.length} {section.items.length === 1 ? "item" : "items"}
-                  </span>
                 </div>
 
                 <ul className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
                   {section.items.map((food) => {
-                    const inStock = food.stock > 0;
-                    const lowStock = inStock && food.stock <= LOW_STOCK_THRESHOLD;
-
                     return (
                       <li
                         key={food.id}
@@ -418,9 +411,7 @@ export function StoreMenuView({
                         <div className="min-w-0 flex-1 space-y-1">
                           <Link href={`/products/${food.id}`} className="block">
                             <h3
-                              className={`text-base font-extrabold leading-snug transition-colors hover:text-primary ${
-                                inStock ? "text-foreground" : "text-muted-foreground"
-                              }`}
+                              className="text-base font-extrabold leading-snug transition-colors hover:text-primary text-foreground"
                             >
                               {food.name}
                             </h3>
@@ -431,15 +422,6 @@ export function StoreMenuView({
                           <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                             {food.description || "Authentic freshly prepared local delicacy."}
                           </p>
-                          {!inStock ? (
-                            <p className="text-xs font-extrabold text-muted-foreground">Sold out</p>
-                          ) : lowStock ? (
-                            <p className="text-xs font-extrabold text-amber-600">
-                              Only {food.stock} left
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">{food.stock} in stock</p>
-                          )}
                         </div>
 
                         {/* Photo with round + button */}
@@ -454,9 +436,7 @@ export function StoreMenuView({
                                 src={food.image_url}
                                 alt={food.name}
                                 loading="lazy"
-                                className={`h-full w-full object-cover ${
-                                  inStock ? "" : "opacity-60 grayscale"
-                                }`}
+                                className="h-full w-full object-cover"
                               />
                             ) : (
                               <span className="flex h-full w-full items-center justify-center text-4xl">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { reviewSellerAction } from "@/modules/admin/actions";
 import AdminNav from "@/components/admin/AdminNav";
+import AdminLoading from "../loading";
 
 type Seller = {
   id: string;
@@ -76,11 +77,7 @@ export default function AdminSellersPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center p-6">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading merchant verification queue...</div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   const filtered = activeTab === "all" ? sellers : sellers.filter((s) => s.status === activeTab);

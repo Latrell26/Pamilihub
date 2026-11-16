@@ -30,6 +30,9 @@ export default async function StoreMenuPage({
     typeof searchParams.category === "string" ? searchParams.category.trim() : undefined;
   const categoryId = rawCategory && rawCategory.length > 0 ? rawCategory : undefined;
 
+  const fromSearch = searchParams.from === "search";
+  const searchQ = typeof searchParams.q === "string" ? searchParams.q : undefined;
+
   const [store, user] = await Promise.all([
     getStoreMenu(storeId),
     getHeaderUser(),
@@ -45,6 +48,8 @@ export default async function StoreMenuPage({
       userRole={user?.role}
       initialSearch={search}
       initialCategory={categoryId}
+      fromSearch={fromSearch}
+      searchQueryParam={searchQ}
     />
   );
 }

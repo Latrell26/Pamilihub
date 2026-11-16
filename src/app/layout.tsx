@@ -7,7 +7,7 @@ import { CartProvider } from "@/lib/cart/cart-context";
 import { getHeaderUser } from "@/lib/auth/header-user";
 
 export const viewport: Viewport = {
-  themeColor: "#e11d48",
+  themeColor: "#2373F4",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

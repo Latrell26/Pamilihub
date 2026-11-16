@@ -21,6 +21,7 @@ export type OrderWithItems = {
   customer_id: string;
   seller_id: string;
   sellerStoreName: string | null;
+  sellerStoreImage: string | null;
   delivery_name: string;
   delivery_phone: string;
   delivery_address: string;
@@ -42,7 +43,14 @@ export async function getCustomerOrders(): Promise<OrderWithItems[] | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  // Check role so admins and sellers testing or viewing customer orders can see them
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  let query = supabase
     .from("orders")
     .select(
       `
@@ -55,14 +63,48 @@ export async function getCustomerOrders(): Promise<OrderWithItems[] | null> {
         products ( name, image_url ) )
       `
     )
-    .eq("customer_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) return null;
-  return (data ?? []).map((o: any) => ({
-    ...o,
-    sellerStoreName: o.sellers?.store_name ?? null,
-  })) as unknown as OrderWithItems[];
+  if (profile?.role === "seller") {
+    // If logged in as seller, show orders placed by this user OR orders for their store
+    const { data: seller } = await supabase
+      .from("sellers")
+      .select("id")
+      .eq("profile_id", user.id)
+      .single();
+
+    if (seller?.id) {
+      query = query.or(`customer_id.eq.${user.id},seller_id.eq.${seller.id}`);
+    } else {
+      query = query.eq("customer_id", user.id);
+    }
+  } else if (profile?.role === "admin") {
+    // Admin can view all orders
+  } else {
+    // Customer reads own orders
+    query = query.eq("customer_id", user.id);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("getCustomerOrders error:", error);
+    return null;
+  }
+
+  return (data ?? []).map((o: any) => {
+    const items = o.order_items ?? [];
+    const storeImage =
+      items.find((i: any) => i.products?.image_url)?.products?.image_url ?? null;
+    const storeName = Array.isArray(o.sellers)
+      ? o.sellers[0]?.store_name ?? null
+      : o.sellers?.store_name ?? null;
+
+    return {
+      ...o,
+      sellerStoreName: storeName,
+      sellerStoreImage: storeImage,
+    };
+  }) as unknown as OrderWithItems[];
 }
 
 /** Get a single order with items (RLS: customer reads own, seller reads own store,
@@ -92,9 +134,17 @@ export async function getOrderById(
 
   if (error || !data) return null;
   const o = data as any;
+  const items = o.order_items ?? [];
+  const storeImage =
+    items.find((i: any) => i.products?.image_url)?.products?.image_url ?? null;
+  const storeName = Array.isArray(o.sellers)
+    ? o.sellers[0]?.store_name ?? null
+    : o.sellers?.store_name ?? null;
+
   return {
     ...o,
-    sellerStoreName: o.sellers?.store_name ?? null,
+    sellerStoreName: storeName,
+    sellerStoreImage: storeImage,
   } as unknown as OrderWithItems;
 }
 
@@ -129,10 +179,20 @@ export async function getSellerOrders(): Promise<OrderWithItems[] | null> {
     .order("created_at", { ascending: false });
 
   if (error) return null;
-  return (data ?? []).map((o: any) => ({
-    ...o,
-    sellerStoreName: o.sellers?.store_name ?? null,
-  })) as unknown as OrderWithItems[];
+  return (data ?? []).map((o: any) => {
+    const items = o.order_items ?? [];
+    const storeImage =
+      items.find((i: any) => i.products?.image_url)?.products?.image_url ?? null;
+    const storeName = Array.isArray(o.sellers)
+      ? o.sellers[0]?.store_name ?? null
+      : o.sellers?.store_name ?? null;
+
+    return {
+      ...o,
+      sellerStoreName: storeName,
+      sellerStoreImage: storeImage,
+    };
+  }) as unknown as OrderWithItems[];
 }
 
 // ─── Seller order management UI ───────────────────────────────────────────────

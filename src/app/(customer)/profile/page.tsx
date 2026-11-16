@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { updateProfileAction, signoutAction } from "@/modules/accounts/actions";
 import { getSellerStatus } from "@/modules/accounts/queries";
+import ProfileLoading from "./loading";
 
 const inputClass =
   "w-full rounded-xl border border-input bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all";
@@ -111,11 +112,7 @@ export default function ProfilePage() {
   }
 
   if (!loaded) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center p-6">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading profile...</div>
-      </div>
-    );
+    return <ProfileLoading />;
   }
 
   if (!profile) {

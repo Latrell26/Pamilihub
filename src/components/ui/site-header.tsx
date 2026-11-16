@@ -15,10 +15,11 @@ export default function SiteHeader({
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isStorePage = pathname.startsWith("/stores/");
+  const isSearchPage = pathname === "/search";
   const { itemCount } = useCart();
 
-  // Hide header completely on login, register, and store menu pages
-  if (isAuthPage || isStorePage) {
+  // Hide header completely on login, register, search, and store menu pages
+  if (isAuthPage || isStorePage || isSearchPage) {
     return null;
   }
 
@@ -46,22 +47,7 @@ export default function SiteHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-md">
-      {/* Top Location Bar (PWA Food Delivery feel) */}
-      <div className="bg-primary/5 border-b border-primary/10 py-1 px-4 text-center">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-1.5 mx-auto sm:mx-0 truncate">
-            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-            <span className="font-semibold text-foreground truncate">Delivering to San Pablo City, Laguna</span>
-            <span className="hidden sm:inline text-primary/60">• Flat ₱50 Delivery Fee</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-primary/80">
-            <Sparkles className="w-3 h-3" />
-            <span className="font-medium">Direct from Local Food Producers</span>
-          </div>
-        </div>
-      </div>
-
+    <header className="sticky z-30 bg-card/95 backdrop-blur-md">
       {/* Main App Bar */}
 {/* Main App Bar: desktop only (>= 1024px) */}
 <div className="hidden lg:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 items-center justify-between gap-4">        {/* Brand / Logo */}

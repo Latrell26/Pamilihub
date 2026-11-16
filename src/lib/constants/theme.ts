@@ -17,28 +17,28 @@ export const THEME_BRAND = {
   currencyCode: "PHP",
   flatDeliveryFee: 50,
   deliveryFeeLabel: "Flat ₱50 Local Delivery Fee",
-  primaryHex: "#e11d48", // Rose 600
+  primaryHex: "#2373F4", // Brand Blue
 } as const;
 
 // ─── 2. Colors ────────────────────────────────────────────────────────────────
 
 export const THEME_COLORS = {
-  // Primary brand palette (San Pablo Red / Rose)
+  // Primary brand palette (#2373F4)
   primary: {
     DEFAULT: "hsl(var(--primary))",
     foreground: "hsl(var(--primary-foreground))",
-    hex: "#e11d48",
+    hex: "#2373F4",
     shades: {
-      50: "#fff1f2",
-      100: "#ffe4e6",
-      200: "#fecdd3",
-      300: "#fda4af",
-      400: "#fb7185",
-      500: "#f43f5e",
-      600: "#e11d48",
-      700: "#be123c",
-      800: "#9f1239",
-      900: "#881337",
+      50: "#eff6ff",
+      100: "#dbeafe",
+      200: "#bfdbfe",
+      300: "#93c5fd",
+      400: "#60a5fa",
+      500: "#3b82f6",
+      600: "#2373F4",
+      700: "#1d5ec9",
+      800: "#174aa0",
+      900: "#133d83",
     },
   },
 
@@ -101,9 +101,9 @@ export const THEME_COLORS = {
     customer: {
       label: "Customer",
       icon: "🛍️",
-      colorHex: "#e11d48", // Rose 600
-      badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
-      accentBgClass: "bg-rose-500/10",
+      colorHex: "#2373F4",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+      accentBgClass: "bg-blue-500/10",
       textClass: "text-primary",
     },
     seller: {

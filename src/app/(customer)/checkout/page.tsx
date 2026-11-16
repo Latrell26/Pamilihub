@@ -1,57 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-context";
 import { checkoutAction } from "@/modules/orders/actions";
+import { Banknote, CreditCard, MapPin, ArrowLeft } from "lucide-react";
+import CheckoutLoading from "./loading";
 
-export default function CheckoutPage() {
+const DELIVERY_FEE = 50;
+
+const inputClass = (hasError: boolean) =>
+  `h-12 w-full rounded-2xl border bg-background px-4 text-sm placeholder:text-muted-foreground transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary ${
+    hasError ? "border-red-400 bg-red-50/20" : "border-input"
+  }`;
+
+function CheckoutContent() {
   const router = useRouter();
-  const { items, subtotal, isLoaded, clear: clearCart } = useCart();
+  const searchParams = useSearchParams();
+  const storeParam = searchParams.get("store");
+  const isReorder =
+    searchParams.get("reorder") === "1" || searchParams.has("reorder");
+
+  const { items, isLoaded, clear: clearCart, removeItem } = useCart();
+  const [reorderItems, setReorderItems] = useState<typeof items>([]);
+  const [reorderLoaded, setReorderLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [paymentMethod, setPaymentMethod] = useState<"mockpay" | "cod">("mockpay");
+  const [deliveryName, setDeliveryName] = useState("");
+  const [deliveryPhone, setDeliveryPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Load re-order items from sessionStorage when in reorder mode
+  useEffect(() => {
+    if (!isReorder) return;
+    try {
+      const raw = sessionStorage.getItem("pamilihub_reorder");
+      if (!raw) {
+        // Session was cleared (back nav after completing or abandoning re-order)
+        // Redirect to orders silently
+        router.replace("/orders");
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.length === 0) {
+        router.replace("/orders");
+        return;
+      }
+      setReorderItems(parsed);
+    } catch {
+      router.replace("/orders");
+      return;
+    }
+    setReorderLoaded(true);
+  }, [isReorder, router]);
+
+  // Autofill delivery information from user profile / DB
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCustomerProfile() {
+      try {
+        const res = await fetch("/api/me");
+        if (res.ok) {
+          const profile = await res.json();
+          if (profile && isMounted) {
+            if (profile.full_name) setDeliveryName(profile.full_name);
+            if (profile.phone) setDeliveryPhone(profile.phone);
+            if (profile.address) setDeliveryAddress(profile.address);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to autofill customer details from DB:", err);
+      }
+    }
+    loadCustomerProfile();
+    return () => { isMounted = false; };
+  }, []);
 
   const getFieldError = (name: string) => fieldErrors[name]?.[0];
 
+  // Filter items: reorder takes precedence over regular cart
+  const checkoutItems = isReorder
+    ? reorderItems
+    : storeParam
+    ? items.filter((i) => i.sellerId === storeParam)
+    : items;
+
   // Group items by seller for per-seller delivery fee
-  const itemsBySeller = new Map<string, { name: string; items: typeof items }>();
-  for (const item of items) {
+  const itemsBySeller = new Map<string, { name: string; items: typeof checkoutItems }>();
+  for (const item of checkoutItems) {
     if (!itemsBySeller.has(item.sellerId)) {
       itemsBySeller.set(item.sellerId, { name: item.sellerName, items: [] });
     }
     itemsBySeller.get(item.sellerId)!.items.push(item);
   }
 
-  const deliveryFee = 50 * itemsBySeller.size;
+  const subtotal = checkoutItems.reduce(
+    (sum, i) => sum + i.price * i.quantity,
+    0
+  );
+  const storeCount = itemsBySeller.size;
+  const deliveryFee = DELIVERY_FEE * storeCount;
   const grandTotal = subtotal + deliveryFee;
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center p-6">
-        <div className="text-sm text-muted-foreground animate-pulse">Loading checkout details...</div>
-      </div>
-    );
+  const targetSellerName =
+    (storeParam || isReorder) && checkoutItems.length > 0
+      ? checkoutItems[0].sellerName
+      : null;
+
+  const editCartHref = isReorder
+    ? "/cart?reorder=1"
+    : storeParam
+    ? `/cart?store=${storeParam}`
+    : "/cart";
+
+  const isDataReady = isReorder ? reorderLoaded : isLoaded;
+
+  if (!isDataReady) {
+    return <CheckoutLoading />;
   }
 
-  if (items.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
-      <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
-        <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+      <div className="mx-auto max-w-md space-y-4 px-4 py-20 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
           📦
         </div>
-        <h1 className="text-lg font-bold tracking-tight text-foreground">Cart is empty</h1>
+        <h1 className="text-lg font-bold tracking-tight text-foreground">
+          {isReorder
+            ? "Re-order is empty"
+            : storeParam
+            ? "No items from this store in your cart"
+            : "Cart is empty"}
+        </h1>
         <p className="text-xs text-muted-foreground">
-          Please add items to your cart before proceeding to checkout.
+          {isReorder
+            ? "Your re-order items were removed or already processed."
+            : storeParam
+            ? "Your items for this store may have already been ordered or removed."
+            : "Please add items to your cart before proceeding to checkout."}
         </p>
         <Link
-          href="/products"
-          className="inline-block px-5 py-2.5 rounded-2xl bg-primary text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
+          href={editCartHref}
+          className="inline-block rounded-full bg-primary px-6 py-3 text-xs font-bold text-primary-foreground shadow hover:bg-primary/90"
         >
-          Browse Catalog
+          {isReorder ? "Return to Re-order" : "Return to Basket"}
         </Link>
       </div>
     );
@@ -61,14 +157,27 @@ export default function CheckoutPage() {
     setLoading(true);
     setMessage("");
     setError("");
+
     const result = await checkoutAction(null, formData);
     if (result.success) {
       setMessage(result.message);
-      clearCart();
+
+      if (isReorder) {
+        // Clear re-order session; existing cart is completely untouched
+        sessionStorage.removeItem("pamilihub_reorder");
+      } else if (storeParam) {
+        // If checkout was for a specific store, remove only those items
+        for (const item of checkoutItems) {
+          removeItem(item.productId);
+        }
+      } else {
+        clearCart();
+      }
+
       router.push("/orders");
     } else {
       let rawMsg = result.message || "Checkout failed. Please check the fields.";
-      for (const item of items) {
+      for (const item of checkoutItems) {
         rawMsg = rawMsg.replaceAll(item.productId, `"${item.name}"`);
       }
       rawMsg = rawMsg.replace(
@@ -81,211 +190,250 @@ export default function CheckoutPage() {
     setLoading(false);
   }
 
+  const paymentOptions = [
+    {
+      value: "mockpay" as const,
+      title: "MockPay (Simulated)",
+      desc: "Simulated online checkout demo. Allows testing approval/cancellation with immediate status update.",
+      Icon: CreditCard,
+    },
+    {
+      value: "cod" as const,
+      title: "Cash on Delivery",
+      desc: "Pay directly in cash when the local food seller delivers your delicacies to your doorstep.",
+      Icon: Banknote,
+    },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-3 px-1">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">Checkout</h1>
-          <p className="text-xs text-muted-foreground">
-            Confirm your delivery details and choose payment
-          </p>
+    <form action={handleCheckout} className="mx-auto max-w-3xl pb-32">
+      <input
+        type="hidden"
+        name="cart"
+        value={JSON.stringify(
+          checkoutItems.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+          }))
+        )}
+      />
+
+      {/* Sticky header */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/60">
+        <div className="mx-auto max-w-3xl flex items-center gap-3 px-4 py-3">
+          <Link
+            href={editCartHref}
+            aria-label="Back to cart"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/50 bg-card text-foreground shadow-sm transition active:scale-90"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-lg font-black leading-tight text-foreground">
+              Checkout
+            </h1>
+            <p className="truncate text-xs text-muted-foreground">
+              {targetSellerName
+                ? targetSellerName
+                : `${storeCount} store${storeCount !== 1 ? "s" : ""}`}
+            </p>
+          </div>
         </div>
-        <Link
-          href="/cart"
-          className="text-xs font-bold text-primary hover:underline"
-        >
-          ← Edit Cart
-        </Link>
       </div>
 
-      {error && (
-        <div className="rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-700 flex items-start gap-2">
-          <span>{error}</span>
-        </div>
-      )}
-
-      {message && (
-        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs text-emerald-800">
-          {message}
-        </div>
-      )}
-
-      <form action={handleCheckout} className="space-y-5">
-        <input
-          type="hidden"
-          name="cart"
-          value={JSON.stringify(
-            items.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-            }))
-          )}
-        />
-
-        {/* Delivery Details Card */}
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <span className="text-base">📍</span>
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
-              Delivery Address
-            </h2>
+      <div className="space-y-6 px-4 pt-5">
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-700">
+            {error}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Recipient Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="delivery_name"
-                required
-                placeholder="Juan Dela Cruz"
-                className={`w-full rounded-xl border bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
-                  getFieldError("deliveryName") ? "border-red-400 bg-red-50/20" : "border-input"
-                }`}
-              />
-              {getFieldError("deliveryName") && (
-                <p className="text-[11px] text-red-600 mt-1">{getFieldError("deliveryName")}</p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Phone Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="delivery_phone"
-                type="tel"
-                required
-                placeholder="0912 345 6789"
-                className={`w-full rounded-xl border bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
-                  getFieldError("deliveryPhone") ? "border-red-400 bg-red-50/20" : "border-input"
-                }`}
-              />
-              {getFieldError("deliveryPhone") && (
-                <p className="text-[11px] text-red-600 mt-1">{getFieldError("deliveryPhone")}</p>
-              )}
-            </div>
-
-            <div className="sm:col-span-2 space-y-1">
-              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                San Pablo City Delivery Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                name="delivery_address"
-                required
-                placeholder="House/Unit #, Street, Barangay, San Pablo City, Laguna"
-                className={`w-full rounded-xl border bg-background px-3 py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
-                  getFieldError("deliveryAddress") ? "border-red-400 bg-red-50/20" : "border-input"
-                }`}
-              />
-              {getFieldError("deliveryAddress") && (
-                <p className="text-[11px] text-red-600 mt-1">{getFieldError("deliveryAddress")}</p>
-              )}
-            </div>
+        )}
+        {message && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">
+            {message}
           </div>
-        </div>
+        )}
 
-        {/* Payment Options Card */}
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-3.5">
-          <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <span className="text-base">💳</span>
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
-              Payment Method
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 active:scale-[0.99] ${
-                paymentMethod === "mockpay"
-                  ? "border-primary bg-primary/5 ring-2 ring-primary"
-                  : "border-border bg-card hover:bg-muted/40"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-xs sm:text-sm text-foreground flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                  MockPay (Simulated)
-                </span>
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value="mockpay"
-                  checked={paymentMethod === "mockpay"}
-                  onChange={() => setPaymentMethod("mockpay")}
-                  className="accent-primary h-4 w-4"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Simulated online checkout demo. Allows testing approval/cancellation with immediate status update.
-              </p>
-            </label>
-
-            <label
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 active:scale-[0.99] ${
-                paymentMethod === "cod"
-                  ? "border-primary bg-primary/5 ring-2 ring-primary"
-                  : "border-border bg-card hover:bg-muted/40"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-xs sm:text-sm text-foreground flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                  Cash on Delivery
-                </span>
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value="cod"
-                  checked={paymentMethod === "cod"}
-                  onChange={() => setPaymentMethod("cod")}
-                  className="accent-primary h-4 w-4"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Pay directly in cash when the local food seller delivers your delicacies to your doorstep.
-              </p>
-            </label>
-          </div>
-        </div>
-
-        {/* Bill Summary */}
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm space-y-3">
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-            Order Total ({itemsBySeller.size} store{itemsBySeller.size !== 1 ? "s" : ""})
+        {/* Delivery address */}
+        <section className="space-y-4 rounded-[2rem] border border-border/60 bg-card p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-xl font-black text-foreground">
+            <MapPin className="h-5 w-5 text-primary" aria-hidden="true" />
+            Delivery address
           </h2>
 
-          <div className="space-y-1.5 text-xs">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Food Items Subtotal</span>
-              <span className="font-bold text-foreground">₱{subtotal.toFixed(2)}</span>
+          <div className="space-y-1">
+            <label
+              htmlFor="delivery_name"
+              className="block text-xs font-bold text-muted-foreground"
+            >
+              Recipient name 
+            </label>
+            <input
+              id="delivery_name"
+              name="delivery_name"
+              required
+              placeholder="Juan Dela Cruz"
+              value={deliveryName}
+              onChange={(e) => setDeliveryName(e.target.value)}
+              className={inputClass(Boolean(getFieldError("deliveryName")))}
+            />
+            {getFieldError("deliveryName") && (
+              <p className="text-[11px] text-red-600">{getFieldError("deliveryName")}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label
+              htmlFor="delivery_phone"
+              className="block text-xs font-bold text-muted-foreground"
+            >
+              Phone number 
+            </label>
+            <input
+              id="delivery_phone"
+              name="delivery_phone"
+              type="tel"
+              required
+              placeholder="0912 345 6789"
+              value={deliveryPhone}
+              onChange={(e) => setDeliveryPhone(e.target.value)}
+              className={inputClass(Boolean(getFieldError("deliveryPhone")))}
+            />
+            {getFieldError("deliveryPhone") && (
+              <p className="text-[11px] text-red-600">{getFieldError("deliveryPhone")}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label
+              htmlFor="delivery_address"
+              className="block text-xs font-bold text-muted-foreground"
+            >
+              San Pablo City delivery address 
+            </label>
+            <input
+              id="delivery_address"
+              name="delivery_address"
+              required
+              placeholder="House/Unit #, Street, Barangay, San Pablo City, Laguna"
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              className={inputClass(Boolean(getFieldError("deliveryAddress")))}
+            />
+            {getFieldError("deliveryAddress") && (
+              <p className="text-[11px] text-red-600">{getFieldError("deliveryAddress")}</p>
+            )}
+          </div>
+        </section>
+
+        {/* Payment method */}
+        <section className="space-y-3 rounded-[2rem] border border-border/60 bg-card p-5 shadow-sm">
+          <h2 className="text-xl font-black text-foreground">Payment method</h2>
+
+          <div className="space-y-3">
+            {paymentOptions.map(({ value, title, desc, Icon }) => {
+              const selected = paymentMethod === value;
+              return (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all active:scale-[0.99] ${
+                    selected
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : "border-border bg-card hover:bg-muted/40"
+                  }`}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-extrabold text-foreground">
+                      {title}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                      {desc}
+                    </span>
+                  </span>
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value={value}
+                    checked={selected}
+                    onChange={() => setPaymentMethod(value)}
+                    className="mt-1 h-5 w-5 shrink-0 accent-primary"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Summary lines */}
+        <section id="order-summary" className="scroll-mt-24 space-y-4 pb-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-foreground">Subtotal</h2>
+            <span className="text-base font-bold text-foreground">
+              ₱{subtotal.toFixed(2)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-base text-foreground">
+            <span>
+              Delivery fee (₱{DELIVERY_FEE} × {storeCount} store
+              {storeCount !== 1 ? "s" : ""})
+            </span>
+            <span className="font-bold">₱{deliveryFee.toFixed(2)}</span>
+          </div>
+        </section>
+      </div>
+
+      {/*
+        Fixed total card ABOVE the bottom navbar.
+        Set the navbar's height with --bottom-nav-h (default 4rem).
+      */}
+      <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h,1rem)] z-30">
+        <div className="mx-auto max-w-3xl px-3 pb-1">
+          <div className="rounded-[2rem] border border-border/60 bg-card/95 p-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur-md">
+            <div className="flex items-start justify-between px-2 pt-1">
+              <div>
+                <p className="text-lg font-black text-foreground">
+                  Total{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (incl. delivery)
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("order-summary")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="text-sm font-bold text-foreground underline underline-offset-4"
+                >
+                  See summary
+                </button>
+              </div>
+              <span className="text-lg font-black text-foreground">
+                ₱{grandTotal.toFixed(2)}
+              </span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Delivery Fee (₱50 × {itemsBySeller.size})</span>
-              <span className="font-bold text-foreground">₱{deliveryFee.toFixed(2)}</span>
-            </div>
-            <div className="pt-2 border-t border-border flex justify-between items-center text-sm font-black text-foreground">
-              <span>Grand Total</span>
-              <span className="text-lg font-black text-foreground">₱{grandTotal.toFixed(2)}</span>
-            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-3 flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-primary text-base font-extrabold text-primary-foreground shadow-md shadow-primary/25 transition active:scale-[0.98] hover:bg-primary/90 disabled:opacity-60"
+            >
+              {loading ? "Securing & processing order..." : "Place order"}
+            </button>
           </div>
         </div>
-
-        {/* Sticky-feeling Place Order Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-primary text-primary-foreground font-black text-sm shadow-xl shadow-primary/25 hover:bg-primary/90 disabled:opacity-60 transition-all active:scale-[0.99] cursor-pointer"
-        >
-          {loading ? (
-            <span>Securing & Processing Order...</span>
-          ) : (
-            `Place Order • ₱${grandTotal.toFixed(2)}`
-          )}
-        </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}   

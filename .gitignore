@@ -40,5 +40,8 @@ next-env.d.ts
 # vscode local history
 .history/
 
+# repomix generated output
+repomix-output.*
+
 # supabase temp
 supabase/.temp/
