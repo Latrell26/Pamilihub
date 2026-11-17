@@ -88,10 +88,54 @@ To test each role in the application, create accounts via `/register` or Supabas
 
 ---
 
-## 🧪 Postman & Quality Assurance
+## 🧪 Testing & Quality Assurance
 
-- **MockPay API Postman Collection:** Located at `postman/pamilihub_mockpay.postman_collection.json`. Covers 6 automated test scenarios (401 Unauthorized, 403 Forbidden, 404 Not Found, 400 Bad Request, 200 Payment Approved, 200 Payment Cancelled).
-- **Functional Test Cases:** Detailed test matrix documented in [`docs/test-cases.md`](docs/test-cases.md).
+This project uses three testing layers to verify functionality, security, and platform compliance:
+
+### Unit + Component Tests (`pnpm test:unit`)
+- **Location:** `tests/unit/` and `tests/components/`
+- **Framework:** Vitest + React Testing Library + jsdom
+- **Coverage:** 65+ Zod schema validations, address format logic, role-specific nav links, cart controls
+- **Command:** `pnpm test:unit` — exits 0 on all passing; HTML report generated in `vitest/`
+
+### E2E Tests (`pnpm test:e2e`)
+- **Location:** `e2e/`
+- **Framework:** Playwright with multi-role storage state
+- **Coverage:** 134 tests across 7 journey specs:
+  - `guest.spec.ts` — public catalog, guest redirects
+  - `customer-checkout.spec.ts` — multi-seller split, MockPay approve/cancel, COD
+  - `seller-fulfillment.spec.ts` — lifecycle transitions, reject + stock restore
+  - `admin-governance.spec.ts` — dashboard, seller approvals, order/payment audit
+  - `api-contract.spec.ts` — MockPay guards + PSGC allow-list
+  - `security.spec.ts` — cross-role redirects, `/unauthorized` page
+  - `responsive.spec.ts` — desktop + mobile width rendering
+- **Command:** `pnpm test:e2e` — generates Playwright HTML report in `playwright-report/`
+
+### Postman Collection (`postman/pamilihub_mockpay.postman_collection.json`)
+- **8 automated API tests** for the MockPay simulated payment endpoint:
+  1. Missing Authorization → 401 Unauthorized
+  2. Non-Customer Role → 403 Forbidden
+  3. Non-Existent Order ID → 404 Not Found
+  4. Mismatched Payment Amount → 400 Bad Request
+  5. Valid Payment Approval → 200 OK (Paid)
+  6. Valid Payment Cancellation → 200 OK (Stock Restored)
+  7. COD Order → MockPay → 400 Bad Request (non-MockPay guard)
+  8. Cancelled/Rejected Order → 400 Bad Request (terminal-order guard)
+- **Pre-request script** auto-fetches customer/seller JWTs from Supabase Auth — no manual token replacement needed.
+- **Environment:** `postman/pamilihub.postman_environment.json` with test accounts (`ana@pamilihub.test`, `maria@pamilihub.test`)
+- **Instructions:** See [`docs/POSTMAN.md`](docs/POSTMAN.md) — import both files, ensure environment is selected, click Run.
+- **Variable setup:** Fill `{{approveOrderId}}`, `{{cancelOrderId}}`, `{{codOrderId}}`, `{{cancelledOrderId}}` from demo DB or create orders via the UI first.
+
+### Testing Evidence for Rubric Criterion 4
+
+| Artifact | Location | What it proves |
+|---|---|---|
+| Unit + component test results | `vitest/` HTML report | 65+ schema and logic tests pass |
+| E2E test results | `playwright-report/` HTML report | 134 end-to-end journey tests pass |
+| Postman run results | `postman/` — export from Run dropdown | 8 MockPay API tests pass (tokens auto-filled) |
+| Test case status matrix | `docs/test-cases.md` | PASS/PENDING status for all 73 test cases |
+| Security-controls mapping | `docs/TECHNICAL.md` § "Security Controls Verification" | Each Postman 401/403/404/400 mapped to RLS + app-layer guard |
+| README Testing section | This section | Links to all three test layers and evidence locations |
 
 ---
 
@@ -103,3 +147,4 @@ To test each role in the application, create accounts via `/register` or Supabas
 - [`docs/TECHNICAL.md`](docs/TECHNICAL.md) — In-depth technical architecture and atomic transactions.
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — User manual for Customers, Merchants, and Admins.
 - [`docs/EVALUATION.md`](docs/EVALUATION.md) — ISO/IEC 25010 software quality evaluation survey and results.
+- [`docs/POSTMAN.md`](docs/POSTMAN.md) — Postman collection import, variable setup, and test run instructions.

@@ -142,3 +142,29 @@ Pamilihub strictly prohibits real payment gateway integration (no PayPal, Stripe
   - `404 Not Found`: Order ID does not exist or is not pending payment.
 
 > **Payment-gated acceptance:** For MockPay orders, the seller may only `accept` after `payment_status = paid`. The `update_order_status` RPC rejects `accepted` with `Customer has not paid for this MockPay order yet.` COD orders may be accepted immediately and become `paid` when the seller marks them `completed`.
+
+---
+
+## Security Controls Verification
+
+Pamilihub employs **defense-in-depth** access control across two enforcement layers: Next.js server-side role guards (application kernel) and Supabase PostgreSQL Row-Level Security (database kernel). The following table maps each Postman collection test case to its corresponding security control, providing end-to-end verification that unauthorized access is blocked at every layer.
+
+| Control / Test | Postman Request | What it verifies | Failure mode if absent |
+|---|---|---|---|
+| **401: Missing/Bad Session** | Request 1 — Missing Authorization Header → 401 | API rejects calls without a valid Bearer token or Supabase session cookie | Requests would succeed without authentication, exposing all endpoints to unauthenticated callers |
+| **403: Wrong Role** | Request 2 — Non-Customer Role → 403 | Seller/admin token cannot process a customer's MockPay order; role check enforced | A seller could approve/cancel a customer's order, or an admin could modify customer data |
+| **404: Non-existent Order** | Request 3 — Non-Existent Order ID → 404 | Invalid UUIDs are rejected at the database level; no row enumeration | Attackers could probe for valid order IDs through error messages |
+| **400: Amount Mismatch** | Request 4 — Mismatched Payment Amount → 400 | Server recomputes order total and rejects amounts that don't match | A client could under- or over-pay and bypass the validation |
+| **400: Non-MockPay Order** | Request 7 — COD Order → MockPay → 400 | Orders placed via COD are refused by the MockPay route | COD orders could be fake-approved as MockPay payments |
+| **400: Terminal Order** | Request 8 — Cancelled/Rejected → 400 | Orders already in `cancelled`/`rejected` state cannot be re-processed | Prevents replay attacks on already-terminal orders |
+
+### Cross-Layer Verification
+
+| Layer | Test Artifact | Scope |
+|---|---|---|
+| **Application** | Playwright `security.spec.ts` | UI route guards: `/admin/*`, `/seller/*`, `/dashboard` redirect by role; `/unauthorized` renders for unauthenticated guests |
+| **Database** | Supabase RLS policies | Table-level row isolation: customers read/write own rows only; sellers read/write own store's rows; admins have full control |
+| **API** | Postman collection (8 requests) | HTTP-level status codes and error messages for auth, role, and input validation guards |
+| **End-to-End** | Combined Postman + Playwright | Full verification that every access control point blocks the right request, at every layer |
+
+> **Note:** The Postman collection's auto-token pre-request script (using Supabase Auth password grant) ensures these guards are tested with real customer and seller sessions, not just anonymous calls. The complete evidence package for criterion 4 combines the Postman run export, the Playwright HTML report, and this mapping table in `docs/TECHNICAL.md`.
