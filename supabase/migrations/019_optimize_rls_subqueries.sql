@@ -18,7 +18,7 @@ create policy "profiles_admin_all" on public.profiles
 -- 2. sellers
 drop policy if exists "sellers_own" on public.sellers;
 create policy "sellers_own" on public.sellers
-  for all using (profile_id = (select auth.uid())) with check (profile_id = (select auth.uid()));
+  for select, update using (profile_id = (select auth.uid())) with check (profile_id = (select auth.uid()));
 
 drop policy if exists "sellers_admin_all" on public.sellers;
 create policy "sellers_admin_all" on public.sellers

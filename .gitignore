@@ -29,6 +29,12 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 .env
+.env.test
+
+# playwright
+playwright/.auth/
+playwright-report/
+test-results/
 
 # vercel
 .vercel

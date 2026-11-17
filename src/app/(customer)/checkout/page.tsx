@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-context";
 import { checkoutAction } from "@/modules/orders/actions";
+import { AddressPicker } from "@/components/ui/address-picker";
 import { Banknote, CreditCard, MapPin, ArrowLeft } from "lucide-react";
 import CheckoutLoading from "./loading";
 
@@ -304,20 +305,16 @@ function CheckoutContent() {
           </div>
 
           <div className="space-y-1">
-            <label
-              htmlFor="delivery_address"
-              className="block text-xs font-bold text-muted-foreground"
-            >
-              San Pablo City delivery address 
-            </label>
             <input
-              id="delivery_address"
+              type="hidden"
               name="delivery_address"
-              required
-              placeholder="House/Unit #, Street, Barangay, San Pablo City, Laguna"
               value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-              className={inputClass(Boolean(getFieldError("deliveryAddress")))}
+            />
+            <AddressPicker
+              value={deliveryAddress}
+              onChange={setDeliveryAddress}
+              disabled={loading}
+              hasError={Boolean(getFieldError("deliveryAddress"))}
             />
             {getFieldError("deliveryAddress") && (
               <p className="text-[11px] text-red-600">{getFieldError("deliveryAddress")}</p>

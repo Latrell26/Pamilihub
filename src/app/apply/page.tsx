@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Store,
-  MapPin,
   FileText,
   CheckCircle2,
   Clock,
@@ -13,11 +12,11 @@ import {
   Loader2,
   BadgeCheck,
   ArrowRight,
-  Sparkles,
   ShoppingBag,
 } from "lucide-react";
 import { applySellerAction } from "@/modules/accounts/actions";
 import { getSellerStatus } from "@/modules/accounts/queries";
+import { AddressPicker } from "@/components/ui/address-picker";
 
 export default function SellerApplyPage() {
   const [application, setApplication] = useState<{
@@ -309,26 +308,20 @@ export default function SellerApplyPage() {
                     </div>
                   </div>
 
-                  {/* Location / Barangay */}
+                  {/* Barangay & Location */}
                   <div className="space-y-2">
                     <label
                       htmlFor="location"
                       className="block text-xs font-bold uppercase tracking-wider text-muted-foreground"
                     >
-                      Barangay & Location in San Pablo <span className="text-red-500">*</span>
+                      Barangay &amp; Location in San Pablo <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input
-                        id="location"
-                        type="text"
-                        required
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        placeholder="e.g., Brgy. San Rafael, San Pablo City, Laguna"
-                        className="h-12 w-full rounded-2xl border border-transparent bg-muted/70 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/15"
-                      />
-                    </div>
+                    <input type="hidden" name="location" value={location} />
+                    <AddressPicker
+                      value={location}
+                      onChange={setLocation}
+                      disabled={submitting}
+                    />
                   </div>
 
                   {/* Store Description & Products */}

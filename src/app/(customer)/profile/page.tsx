@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { updateProfileAction, signoutAction } from "@/modules/accounts/actions";
 import { getSellerStatus } from "@/modules/accounts/queries";
+import { AddressPicker } from "@/components/ui/address-picker";
 import ProfileLoading from "./loading";
 
 const inputClass =
@@ -53,6 +54,8 @@ export default function ProfilePage() {
     phone: "",
     address: "",
   });
+  // Live value of the address edit form (driven by the PSGC picker).
+  const [draftAddress, setDraftAddress] = useState("");
 
   const loadProfile = useCallback(async () => {
     const res = await fetch("/api/me");
@@ -108,6 +111,9 @@ export default function ProfilePage() {
   function startEdit(which: Exclude<Editing, null>) {
     setMessage("");
     setError("");
+    if (which === "address") {
+      setDraftAddress(formData.address);
+    }
     setEditing(which);
   }
 
@@ -209,22 +215,18 @@ export default function ProfilePage() {
               <form action={handleSubmit} className="space-y-3 p-4">
                 <input type="hidden" name="full_name" value={formData.full_name} />
                 <input type="hidden" name="phone" value={formData.phone} />
+                <input type="hidden" name="address" value={draftAddress} />
                 <div className="space-y-1">
                   <label htmlFor="address" className="block text-xs font-bold text-foreground">
                     Delivery address
                   </label>
-                  <input
-                    id="address"
-                    type="text"
-                    name="address"
-                    defaultValue={formData.address}
-                    autoComplete="street-address"
-                    autoFocus
-                    className={inputClass}
-                    placeholder="House or street, Brgy. San Rafael, San Pablo City"
+                  <AddressPicker
+                    value={draftAddress}
+                    onChange={setDraftAddress}
+                    disabled={saving}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Include the barangay and a landmark so the seller can find you.
+                    Pick your barangay in San Pablo City so the seller can find you.
                   </p>
                 </div>
                 <div className="flex gap-2">

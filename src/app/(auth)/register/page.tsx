@@ -8,7 +8,6 @@ import {
   Lock,
   User,
   Phone,
-  MapPin,
   Eye,
   EyeOff,
   AlertCircle,
@@ -17,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { registerAction } from "@/modules/accounts/actions";
+import { AddressPicker } from "@/components/ui/address-picker";
 import { passwordRules } from "@/modules/accounts/password-rules";
 
 const inputBase =
@@ -31,6 +31,7 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [draftAddress, setDraftAddress] = useState("");
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -266,20 +267,17 @@ export default function RegisterPage() {
         </div>
 
         {/* Address */}
-        <div className="relative">
-          <label htmlFor="address" className="sr-only">
-            Barangay or town
-          </label>
-          <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            id="address"
-            type="text"
-            name="address"
-            autoComplete="street-address"
-            placeholder="Barangay / town (optional)"
-            className={`${inputBase} border-transparent focus:border-primary`}
-          />
-        </div>
+        <input type="hidden" name="address" value={draftAddress} />
+        <AddressPicker
+          value={draftAddress}
+          onChange={setDraftAddress}
+          hasError={Boolean(getFieldError("address"))}
+        />
+        {getFieldError("address") && (
+          <p className="mt-1.5 pl-4 text-xs font-medium text-primary">
+            {getFieldError("address")}
+          </p>
+        )}
 
         <button
           type="submit"
