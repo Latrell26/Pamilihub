@@ -5,6 +5,7 @@ import type { OrderSummary, OrderDetail } from "@/modules/orders/types";
 import { getSellerOrdersListOnly, getSellerOrderById } from "@/modules/orders/queries";
 import { OrderList } from "@/components/seller/orders/OrderList";
 import { OrderDetailPanel } from "@/components/seller/orders/OrderDetailPanel";
+import { RotateCw, ArrowLeft } from "lucide-react";
 
 export default function SellerOrdersPage() {
   // ── List state ─────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ export default function SellerOrdersPage() {
   // ── Load detail lazily when a row is selected ──────────────────────────────
   const handleSelectOrder = useCallback(
     async (id: string) => {
-      if (id === selectedId) return; // already selected
+      if (id === selectedId) return;
       setSelectedId(id);
       setDetail(null);
       setDetailLoading(true);
@@ -67,45 +68,33 @@ export default function SellerOrdersPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)]"> {/* subtract site-header height */}
-
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-background">
       {/* ── List pane ─────────────────────────────────────────────────────── */}
       <aside
         aria-label="Order list"
         className={`
-          flex flex-col border-r border-border bg-background
-          w-full md:w-80 lg:w-96 shrink-0
+          flex flex-col border-r border-border/60 bg-background
+          w-full md:w-84 lg:w-96 shrink-0
           ${mobileShowDetail ? "hidden md:flex" : "flex"}
         `}
       >
         {/* Pane header */}
-        <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/60 bg-background">
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground">My Orders</h1>
-            <p className="text-xs text-muted-foreground">
-              {listLoading ? "Loading…" : `${orders.length} order${orders.length !== 1 ? "s" : ""}`}
+            <h1 className="text-base font-black tracking-tight text-foreground">
+              Store Orders
+            </h1>
+            <p className="text-[11px] font-semibold text-muted-foreground">
+              {listLoading ? "Loading orders..." : `${orders.length} order${orders.length !== 1 ? "s" : ""} placed`}
             </p>
           </div>
           <button
             onClick={loadList}
             aria-label="Refresh orders"
             disabled={listLoading}
-            className="rounded-md p-2 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <svg
-              className={`h-4 w-4 text-muted-foreground ${listLoading ? "animate-spin" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RotateCw className={`h-4 w-4 ${listLoading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
@@ -130,23 +119,14 @@ export default function SellerOrdersPage() {
         `}
       >
         {/* Mobile back button */}
-        <div className="md:hidden border-b border-border px-4 py-3 flex items-center gap-2">
+        <div className="md:hidden border-b border-border/60 px-4 py-3 flex items-center gap-2 bg-background">
           <button
             onClick={handleCloseDetail}
             aria-label="Back to order list"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to orders
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to orders list</span>
           </button>
         </div>
 

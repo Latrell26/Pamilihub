@@ -5,7 +5,19 @@ import { usePathname } from "next/navigation";
 import { signoutAction } from "@/modules/accounts/actions";
 import type { HeaderUser } from "@/lib/auth/header-user";
 import { useCart } from "@/lib/cart/cart-context";
-import { ShoppingBag, MapPin, Sparkles } from "lucide-react";
+import {
+  ShoppingBag,
+  Utensils,
+  Receipt,
+  ClipboardList,
+  Store,
+  LayoutDashboard,
+  ShieldCheck,
+  FolderKanban,
+  Users,
+  LogOut,
+  User,
+} from "lucide-react";
 
 export default function SiteHeader({
   user,
@@ -23,76 +35,91 @@ export default function SiteHeader({
     return null;
   }
 
-  const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
+  const roleLinks: Record<string, Array<{ href: string; label: string; icon: React.ComponentType<{ className?: string }> }>> = {
     customer: [
-      { href: "/products", label: "Delicacies" },
-      { href: "/orders", label: "My Orders" },
+      { href: "/products", label: "Delicacies", icon: Utensils },
+      { href: "/orders", label: "My Orders", icon: Receipt },
     ],
     seller: [
-      { href: "/seller/orders", label: "Orders" },
-      { href: "/seller/products", label: "Products" },
+      { href: "/seller/orders", label: "Store Orders", icon: ClipboardList },
+      { href: "/seller/products", label: "Inventory", icon: Store },
     ],
     admin: [
-      { href: "/admin/dashboard", label: "Dashboard" },
-      { href: "/admin/orders", label: "Orders" },
-      { href: "/admin/products", label: "Products" },
-      { href: "/admin/sellers", label: "Approvals" },
-      { href: "/admin/categories", label: "Categories" },
-      { href: "/admin/users", label: "Users" },
+      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+      { href: "/admin/products", label: "Products", icon: Store },
+      { href: "/admin/sellers", label: "Approvals", icon: ShieldCheck },
+      { href: "/admin/categories", label: "Categories", icon: FolderKanban },
+      { href: "/admin/users", label: "Users", icon: Users },
     ],
   };
 
-  const links = user ? roleLinks[user.role] ?? [{ href: "/products", label: "Delicacies" }] : [
-    { href: "/products", label: "Delicacies" },
-  ];
+  const links = user
+    ? roleLinks[user.role] ?? [{ href: "/products", label: "Delicacies", icon: Utensils }]
+    : [{ href: "/products", label: "Delicacies", icon: Utensils }];
 
   return (
-    <header className="sticky z-30 bg-card/95 backdrop-blur-md">
-      {/* Main App Bar */}
-{/* Main App Bar: desktop only (>= 1024px) */}
-<div className="hidden lg:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 items-center justify-between gap-4">        {/* Brand / Logo */}
-        <div className="flex items-center gap-6">
+    <header className="sticky top-0 z-40 w-full bg-background/95 ">
+      {/* Main Desktop & Tablet App Bar (>= 768px) */}
+      <div className="hidden md:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 items-center justify-between gap-6">
+        {/* Brand / Logo + Navigation */}
+        <div className="flex items-center gap-8">
           <Link
-          href={user?.role === "customer" ? "/products" : "/"}
-          className="hidden lg:flex items-center gap-2.5 group font-extrabold text-base sm:text-lg tracking-tight text-foreground transition-colors"
-        >
-          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-black text-sm shadow-md shadow-primary/25 group-hover:scale-105 transition-transform">
-            P
-          </div>
-          <div className="flex flex-col">
-            <span className="leading-tight font-black text-foreground">Pamilihub</span>
-            <span className="text-[9px] font-semibold text-primary uppercase tracking-wider">Food Delicacies</span>
-          </div>
-        </Link>
+            href={user?.role === "seller" ? "/seller/orders" : user?.role === "admin" ? "/admin/dashboard" : "/products"}
+            className="flex items-center gap-2.5 group transition-transform active:scale-95"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-black text-base shadow-md shadow-primary/25 transition-transform group-hover:scale-105">
+              P
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-black tracking-tight text-foreground leading-none">
+                  Pamilihub
+                </span>
+                {user?.role === "seller" && (
+                  <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
+                    Merchant
+                  </span>
+                )}
+                {user?.role === "admin" && (
+                  <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-600">
+                    Admin
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
 
-          {/* Desktop Nav Links (Large screens >= 1024px) */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Nav Links */}
+          <nav className="flex items-center gap-1.5" aria-label="Main Navigation">
             {links.map((l) => {
               const active = pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href));
+              const Icon = l.icon;
               return (
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-extrabold transition-all cursor-pointer ${
                     active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
                   }`}
                 >
-                  {l.label}
+                  <Icon className="h-4 w-4" />
+                  <span>{l.label}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Right side actions — Desktop only (>= 1024px). On phone & tablet, Cart and Account belong in the bottom navbar */}
-        <div className="hidden lg:flex items-center gap-3">
+        {/* Right side actions */}
+        <div className="flex items-center gap-3">
           {/* Cart Icon Button - only for authenticated customers */}
           {user?.role === "customer" && (
             <Link
               href="/cart"
-              className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all active:scale-95"
+              className="relative flex items-center justify-center w-10 h-10 rounded-full border border-border/70 bg-card text-foreground hover:bg-muted transition-all active:scale-95 shadow-xs"
               aria-label="Shopping Cart"
             >
               <ShoppingBag className="w-5 h-5" />
@@ -109,19 +136,24 @@ export default function SiteHeader({
             <div className="flex items-center gap-2">
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/70 bg-card text-xs font-bold text-foreground hover:bg-muted transition-all active:scale-95 shadow-xs"
               >
-                <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center text-[10px] uppercase">
+                <div className="h-6 w-6 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center text-[11px] uppercase">
                   {user.role[0]}
                 </div>
-                <span className="capitalize">{user.role}</span>
+                <div className="flex flex-col text-left">
+                  <span className="capitalize leading-tight">{user.full_name || user.role}</span>
+                  <span className="text-[10px] text-muted-foreground font-semibold uppercase">{user.role}</span>
+                </div>
               </Link>
               <form action={signoutAction}>
                 <button
                   type="submit"
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  aria-label="Sign out"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer"
                 >
-                  Sign out
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign out</span>
                 </button>
               </form>
             </div>
@@ -129,13 +161,13 @@ export default function SiteHeader({
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="px-4 py-2 rounded-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="px-3.5 py-1.5 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-95"
+                className="px-4 py-2 rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm shadow-primary/25 hover:bg-primary/90 transition-all active:scale-95"
               >
                 Sign Up
               </Link>

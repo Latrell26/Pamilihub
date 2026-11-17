@@ -1,8 +1,9 @@
 "use client";
 
-import type { OrderSummary, OrderStatus } from "@/modules/orders/types";
+import type { OrderSummary } from "@/modules/orders/types";
 import { OrderCard } from "./OrderCard";
 import { OrderListSkeleton } from "./Skeletons";
+import { Search, Inbox } from "lucide-react";
 
 const FILTER_TABS: { label: string; value: string }[] = [
   { label: "All",       value: "all" },
@@ -18,7 +19,11 @@ function matchesFilter(order: OrderSummary, filter: string): boolean {
   if (filter === "to_ship")
     return order.order_status === "preparing" || order.order_status === "delivering";
   if (filter === "completed")
-    return order.order_status === "completed" || order.order_status === "rejected" || order.order_status === "cancelled";
+    return (
+      order.order_status === "completed" ||
+      order.order_status === "rejected" ||
+      order.order_status === "cancelled"
+    );
   return true;
 }
 
@@ -57,35 +62,21 @@ export function OrderList({
     .filter((o) => matchesSearch(o, search));
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Search bar */}
-      <div className="px-4 pt-4 pb-2">
+      <div className="p-3">
         <label htmlFor="order-search" className="sr-only">
           Search orders
         </label>
         <div className="relative">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.65 10.65Z"
-            />
-          </svg>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             id="order-search"
             type="search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by name or order #"
-            className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Search by customer or order #..."
+            className="h-10 w-full rounded-2xl border border-transparent bg-muted/70 pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/15"
           />
         </div>
       </div>
@@ -94,35 +85,33 @@ export function OrderList({
       <div
         role="tablist"
         aria-label="Order filters"
-        className="flex gap-1 px-4 pb-2 border-b border-border"
+        className="flex gap-1.5 px-3 pb-3 border-b border-border/60 overflow-x-auto no-scrollbar"
       >
         {FILTER_TABS.map((tab) => {
           const count = orders.filter((o) => matchesFilter(o, tab.value)).length;
+          const isActive = filter === tab.value;
           return (
             <button
               key={tab.value}
               role="tab"
-              aria-selected={filter === tab.value}
+              aria-selected={isActive}
               onClick={() => onFilterChange(tab.value)}
               className={`
-                flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium
-                transition-colors outline-none
-                focus-visible:ring-2 focus-visible:ring-ring
-                ${filter === tab.value
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer
+                ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }
               `}
             >
-              {tab.label}
+              <span>{tab.label}</span>
               <span
-                className={`
-                  rounded-full px-1.5 py-0.5 text-[10px] leading-none
-                  ${filter === tab.value
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                  }
-                `}
+                className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-background text-muted-foreground"
+                }`}
               >
                 {count}
               </span>
@@ -131,52 +120,30 @@ export function OrderList({
         })}
       </div>
 
-      {/* List body */}
-      <div
-        role="list"
-        aria-label="Order list"
-        className="flex-1 overflow-y-auto"
-      >
+      {/* Scrollable list */}
+      <div className="flex-1 overflow-y-auto py-2">
         {loading ? (
           <OrderListSkeleton />
         ) : visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <svg
-              className="mb-4 h-12 w-12 text-muted-foreground/40"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h6m-3-3v6M3.75 9A6.75 6.75 0 0 1 10.5 2.25h3A6.75 6.75 0 0 1 20.25 9v.75M3.75 9v.75A6.75 6.75 0 0 0 10.5 16.5h3a6.75 6.75 0 0 0 6.75-6.75V9"
-              />
-            </svg>
-            <p className="text-sm font-medium text-muted-foreground">
-              {search ? "No orders match your search." : "No orders here yet."}
+          <div className="flex flex-col items-center justify-center p-8 text-center space-y-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
+              <Inbox className="h-6 w-6" />
+            </div>
+            <p className="text-xs font-bold text-foreground">No orders found</p>
+            <p className="text-[11px] text-muted-foreground max-w-[200px]">
+              {search
+                ? "Try searching with a different name or order ID."
+                : "New orders will appear here as customers place them."}
             </p>
-            {search && (
-              <button
-                onClick={() => onSearchChange("")}
-                className="mt-2 text-xs text-primary hover:underline"
-              >
-                Clear search
-              </button>
-            )}
           </div>
         ) : (
           visible.map((order) => (
-            <div key={order.id} role="listitem">
-              <OrderCard
-                order={order}
-                isSelected={selectedId === order.id}
-                onClick={() => onSelect(order.id)}
-              />
-            </div>
+            <OrderCard
+              key={order.id}
+              order={order}
+              isSelected={order.id === selectedId}
+              onClick={() => onSelect(order.id)}
+            />
           ))
         )}
       </div>

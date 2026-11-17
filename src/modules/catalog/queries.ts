@@ -125,7 +125,10 @@ export async function getProducts({
 
   const { data, error } = await query;
 
-  if (error) return null;
+  if (error) {
+    console.error("[getProducts] Supabase query error:", error);
+    return null;
+  }
   return (data ?? []).map((item: any) => ({
     ...item,
     sellers: normalizeSeller(item.sellers),
@@ -239,6 +242,7 @@ export async function getApprovedStores({
   ]);
 
   if (error || !sellersData) {
+    if (error) console.error("[getApprovedStores] Supabase query error:", error);
     return [];
   }
 
@@ -369,7 +373,10 @@ export async function getStoreMenu(storeId: string): Promise<StoreDetail | null>
       .maybeSingle(),
   ]);
 
-  if (error || !store) return null;
+  if (error || !store) {
+    if (error) console.error("[getStoreMenu] Supabase query error:", error);
+    return null;
+  }
 
   const catMap = new Map((categories ?? []).map((c) => [c.id, c.name]));
   const products = ((store.products ?? []) as any[]).map((p) => ({

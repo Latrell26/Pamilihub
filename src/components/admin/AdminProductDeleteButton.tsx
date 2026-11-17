@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { adminDeleteProductAction } from "@/modules/admin/actions";
+import { Trash2 } from "lucide-react";
 
 interface AdminProductDeleteButtonProps {
   productId: string;
@@ -34,9 +35,11 @@ export default function AdminProductDeleteButton({
       type="button"
       onClick={handleDelete}
       disabled={isPending}
-      className="px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 text-xs font-bold transition-all disabled:opacity-50"
+      aria-label={`Remove ${productName}`}
+      className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 cursor-pointer shrink-0"
     >
-      {isPending ? "Removing..." : "Remove Listing"}
+      <Trash2 className="h-3.5 w-3.5" />
+      <span>{isPending ? "Removing..." : "Remove"}</span>
     </button>
   );
 }

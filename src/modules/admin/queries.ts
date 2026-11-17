@@ -193,6 +193,7 @@ export type AdminOrderRow = {
   }>;
 };
 
+
 export async function getAdminOrders(filters?: {
   orderStatus?: string;
   paymentStatus?: string;
@@ -230,8 +231,11 @@ export async function getAdminOrders(filters?: {
     query = query.eq("payment_status", filters.paymentStatus);
   }
 
+  
+
   const { data, error } = await query;
   if (error || !data) return [];
+ 
 
   let results = data as unknown as AdminOrderRow[];
 
@@ -243,10 +247,12 @@ export async function getAdminOrders(filters?: {
       const matchSeller = o.seller?.store_name.toLowerCase().includes(term);
       const matchPhone = o.delivery_phone.toLowerCase().includes(term);
       return matchId || matchName || matchSeller || matchPhone;
+      return Boolean(matchId || matchName || matchSeller || matchPhone);
     });
   }
 
   return results;
+  
 }
 
 export type AdminProductRow = {

@@ -10,16 +10,11 @@ export default function AuthLayout({
     <div className="-mb-20 lg:-mb-8 flex min-h-screen flex-col bg-primary md:items-center md:justify-center md:p-6">
       <div className="flex w-full flex-1 flex-col md:max-w-md md:flex-none">
         {/* Pink hero */}
-        <header className="relative overflow-hidden px-6 pb-14 pt-10 text-center text-primary-foreground">
+        <header className="relative  px-6 pb-14 pt-10 text-center text-primary-foreground">
           {/* Soft decorative circles */}
           <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute -right-8 top-16 h-28 w-28 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute bottom-2 left-6 select-none text-3xl opacity-30">
-            🥧
-          </div>
-          <div className="pointer-events-none absolute bottom-3 right-8 select-none text-3xl opacity-30">
-            ☕
-          </div>
+          
 
           <Link
             href="/"

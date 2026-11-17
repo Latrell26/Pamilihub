@@ -30,6 +30,8 @@ const FALLBACK_CATEGORIES = [
 export default async function HomePage() {
   const user = await getHeaderUser();
 
+  if (!user) redirect("/login"); 
+
   if (user?.role === "admin") {
     redirect("/admin/dashboard");
   }

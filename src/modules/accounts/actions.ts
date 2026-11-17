@@ -102,7 +102,10 @@ export async function loginAction(
     };
   }
 
-  redirect("/dashboard");
+  return {
+    success: true,
+    message: "Logged in successfully.",
+  };
 }
 
 export async function logoutAction(): Promise<ActionState> {
