@@ -105,7 +105,7 @@ export default function RegisterPage() {
         <div>
           <div className="relative">
             <label htmlFor="full_name" className="sr-only">
-              Full name
+              Username
             </label>
             <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -114,7 +114,7 @@ export default function RegisterPage() {
               name="full_name"
               required
               autoComplete="name"
-              placeholder="Full name"
+              placeholder="Username"
               className={`${inputBase} ${borderFor("full_name")}`}
             />
           </div>
