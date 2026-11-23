@@ -51,6 +51,7 @@ export interface OrderSummary {
   /** Short item preview pulled from order_items count + first product names */
   item_preview?: string;
   item_count?: number;
+  queuePosition?: number;
 }
 
 /** Full order loaded only when the seller clicks a row (lazy). */

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { Queue } from "@/lib/data-structures";
 import type { OrderSummary, OrderDetail } from "./types";
 
 // ─── Legacy types (kept for backward-compat with existing customer pages) ─────
@@ -237,7 +238,18 @@ export async function getSellerOrdersListOnly(): Promise<OrderSummary[] | null> 
 
   if (error) return null;
 
-  return (data ?? []).map((o: any) => {
+  // Build a Queue of pending orders (oldest first = front of queue)
+  const pendingOrders = (data ?? []).filter(
+    (o: any) => o.order_status === "pending"
+  );
+  const queue = new Queue<OrderSummary>();
+  for (let i = pendingOrders.length - 1; i >= 0; i--) {
+    queue.enqueue(pendingOrders[i] as unknown as OrderSummary);
+  }
+
+  // Assign queue positions while maintaining original order
+  let queuePos = 1;
+  const result = (data ?? []).map((o: any) => {
     const items: Array<{ quantity: number; products: { name: string } | null }> =
       o.order_items ?? [];
     const item_count = items.reduce(
@@ -256,7 +268,7 @@ export async function getSellerOrdersListOnly(): Promise<OrderSummary[] | null> 
           }`
         : "";
 
-    return {
+    const summary: OrderSummary = {
       id: o.id,
       customer_id: o.customer_id,
       seller_id: o.seller_id,
@@ -272,8 +284,19 @@ export async function getSellerOrdersListOnly(): Promise<OrderSummary[] | null> 
       updated_at: o.updated_at,
       item_preview,
       item_count,
-    } as OrderSummary;
+    };
+
+    // Assign queue position to pending orders (FIFO: oldest pending = position 1)
+    if (o.order_status === "pending" && queue.size > 0) {
+      summary.queuePosition = queuePos;
+      queuePos++;
+      queue.dequeue();
+    }
+
+    return summary;
   });
+
+  return result;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { ArrayList, mergeSort, binarySearch, HashSet, Trie } from "@/lib/data-structures";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +97,7 @@ export async function GET(request: Request) {
       }
 
       if (q) {
-        results.sort((a, b) => b.score - a.score);
+        mergeSort(results, (a, b) => b.score - a.score);
       }
 
       return NextResponse.json({ results, query: q, storeId });
@@ -193,17 +194,36 @@ export async function GET(request: Request) {
         .limit(20),
     ]);
 
-    const results: SearchPrediction[] = [];
+    // ── DSA: Trie — build from product names for prefix-based relevance ──
+    const nameTrie = new Trie();
+    for (const p of products ?? []) {
+      nameTrie.insert(p.name.toLowerCase());
+    }
+
+    // ── DSA: Merge Sort + Binary Search — sort product names alphabetically,
+    // then binary-search for an exact name match in O(log n) ──
+    const sortedProductNames = (products ?? []).map(p => p.name.toLowerCase());
+    mergeSort(sortedProductNames);
+    const hasExactNameMatch = binarySearch(sortedProductNames, qLower) !== -1;
+
+    // ── DSA: HashSet — prevent duplicate IDs across store and product results ──
+    const seenIds = new HashSet<string>();
+
+    // ── DSA: ArrayList — accumulate scored search predictions ──
+    const resultList = new ArrayList<SearchPrediction>();
 
     // Map and score stores
     for (const s of stores ?? []) {
+      if (seenIds.has(s.id)) continue;
+      seenIds.add(s.id);
+
       const photo = s.products?.[0]?.image_url ?? null;
       let score = calculateScore(s.store_name, qLower, 10);
       if (s.description && calculateScore(s.description, qLower) > 0) {
         score = Math.max(score, 30);
       }
 
-      results.push({
+      resultList.push({
         id: s.id,
         type: "store",
         name: s.store_name,
@@ -214,10 +234,24 @@ export async function GET(request: Request) {
       });
     }
 
-    // Map and score products
+    // Map and score products with Trie prefix boost
     for (const p of products ?? []) {
+      if (seenIds.has(p.id)) continue;
+      seenIds.add(p.id);
+
       const sellerObj = Array.isArray(p.sellers) ? p.sellers[0] : p.sellers;
       let score = calculateScore(p.name, qLower, 15);
+
+      // Trie prefix boost: products whose name starts with the query get extra relevance
+      if (nameTrie.startsWith(qLower) && p.name.toLowerCase().startsWith(qLower)) {
+        score += 10;
+      }
+
+      // Binary search exact name match bonus (detected via O(log n) lookup above)
+      if (hasExactNameMatch && p.name.toLowerCase() === qLower) {
+        score += 15;
+      }
+
       if (p.description && calculateScore(p.description, qLower) > 0) {
         score = Math.max(score, 35);
       }
@@ -225,7 +259,7 @@ export async function GET(request: Request) {
         score += 5;
       }
 
-      results.push({
+      resultList.push({
         id: p.id,
         type: "product",
         name: p.name,
@@ -237,8 +271,9 @@ export async function GET(request: Request) {
       });
     }
 
-    // Sort predictions by relevance score descending
-    results.sort((a, b) => b.score - a.score);
+    // ── DSA: Merge Sort — rank results by relevance score (descending) ──
+    const results = resultList.toArray();
+    mergeSort(results, (a, b) => b.score - a.score);
 
     return NextResponse.json({ results, query: q });
   } catch (error) {

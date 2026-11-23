@@ -96,6 +96,11 @@ export function OrderCard({ order, isSelected, onClick }: OrderCardProps) {
       <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-border/40">
         <div className="flex flex-wrap items-center gap-1.5">
           <OrderStatusBadge status={order.order_status as OrderStatus} />
+          {order.queuePosition && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-black text-amber-700 border border-amber-500/20">
+              Queue #{order.queuePosition}
+            </span>
+          )}
           <PaymentBadge
             status={order.payment_status as any}
             method={order.payment_method as any}

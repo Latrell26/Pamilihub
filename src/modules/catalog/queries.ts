@@ -59,6 +59,8 @@ export type StoreDetail = {
   products: (ProductWithSeller & { category_name?: string })[];
 };
 
+import { HashSet } from "@/lib/data-structures/hash-set";
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -190,9 +192,9 @@ export async function getApprovedCategories(): Promise<{
     supabase.from("products").select("category_id"),
   ]);
 
-  const approvedIds = Array.from(
-    new Set((prods ?? []).map((p: any) => p.category_id as string).filter(Boolean))
-  );
+  const approvedIdsSet = new HashSet<string>();
+  (prods ?? []).map((p: any) => p.category_id as string).filter(Boolean).forEach((id: string) => approvedIdsSet.add(id));
+  const approvedIds = Array.from(approvedIdsSet);
 
   return {
     allCategories: categories ?? [],
@@ -299,7 +301,9 @@ export async function getApprovedStores({
     if (!matchesActiveFilters) continue;
 
     // Extract categories present in this store
-    const storeCatIds = Array.from(new Set(allProducts.map((p) => p.category_id)));
+    const storeCatIdsSet = new HashSet<string>();
+  allProducts.map((p: { category_id: string }) => p.category_id).forEach((id: string) => storeCatIdsSet.add(id));
+  const storeCatIds = Array.from(storeCatIdsSet);
     const storeCategories = storeCatIds
       .map((id) => ({ id, name: catMap.get(id) ?? "Other" }))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -393,7 +397,9 @@ export async function getStoreMenu(storeId: string): Promise<StoreDetail | null>
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  const storeCatIds = Array.from(new Set(products.map((p) => p.category_id)));
+  const storeCatIdsSet = new HashSet<string>();
+  products.map((p: { category_id: string }) => p.category_id).forEach((id: string) => storeCatIdsSet.add(id));
+  const storeCatIds = Array.from(storeCatIdsSet);
   const storeCategories = storeCatIds
     .map((id) => ({ id, name: catMap.get(id) ?? "Other" }))
     .sort((a, b) => a.name.localeCompare(b.name));

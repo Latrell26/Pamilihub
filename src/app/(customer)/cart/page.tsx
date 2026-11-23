@@ -285,7 +285,7 @@ function CartContent() {
   const isReorder = searchParams.get("reorder") === "1" || searchParams.has("reorder");
   const isMerge = searchParams.get("merge") === "1";
 
-  const { items, itemCount, addItem, removeItem, updateQuantity, isLoaded } = useCart();
+  const { items, itemCount, addItem, removeItem, updateQuantity, isLoaded, canUndo, undoRemove } = useCart();
 
   // ALL hooks must be declared before any conditional return ↓
 
@@ -469,6 +469,21 @@ function CartContent() {
 
         {storeTabs}
 
+        {/* DSA: Stack Undo Banner — pops and restores last removed item */}
+        {canUndo && (
+          <div className="flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-foreground shadow-sm">
+            <span className="font-semibold">Item removed from cart</span>
+            <button
+              type="button"
+              onClick={undoRemove}
+              className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-sm transition active:scale-95 hover:bg-primary/90"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Undo
+            </button>
+          </div>
+        )}
+
         <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm">
           <ul className="divide-y divide-border/60">
             {activeSeller.items.map((item) => (
@@ -599,6 +614,21 @@ function CartContent() {
       </header>
 
       {storeTabs}
+
+      {/* DSA: Stack Undo Banner — pops and restores last removed item */}
+      {canUndo && (
+        <div className="flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-foreground shadow-sm">
+          <span className="font-semibold">Item removed from cart</span>
+          <button
+            type="button"
+            onClick={undoRemove}
+            className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-sm transition active:scale-95 hover:bg-primary/90"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Undo
+          </button>
+        </div>
+      )}
 
       {/* Click-away layer for the ••• menu */}
       {menuOpenFor && (

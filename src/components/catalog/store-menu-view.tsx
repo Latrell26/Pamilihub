@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { StoreDetail } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
+import { BinarySearchTree } from "@/lib/data-structures/binary-search-tree";
 import {
   Store,
   MapPin,
@@ -13,6 +14,7 @@ import {
   ArrowLeft,
   BadgeCheck,
   LogIn,
+  ArrowUpDown,
 } from "lucide-react";
 
 const DELIVERY_FEE = 50;
@@ -81,14 +83,39 @@ export function StoreMenuView({
     localStorage.setItem("pamilihub_active_store_name", store.store_name);
   }, [store.id, store.store_name]);
 
+  const [sortByPrice, setSortByPrice] = useState(false);
+
   // Filter foods by name only (R6)
   const trimmedSearch = searchQuery.trim().toLowerCase();
   const filteredFoods = useMemo(() => {
-    if (!trimmedSearch) return store.products;
-    return store.products.filter((p) =>
-      p.name.toLowerCase().includes(trimmedSearch)
-    );
-  }, [store.products, trimmedSearch]);
+    let foods = store.products;
+    if (trimmedSearch) {
+      foods = foods.filter((p) =>
+        p.name.toLowerCase().includes(trimmedSearch)
+      );
+    }
+
+    // ── DSA: BinarySearchTree — sort menu items by price when the toggle is active.
+    // Products are inserted into a BST keyed by price; in-order traversal yields
+    // them in ascending price order (cheapest delicacy first). ──
+    if (sortByPrice && foods.length > 0) {
+      type FoodItem = StoreDetail["products"][number];
+      const priceBST = new BinarySearchTree<number, FoodItem[]>((a, b) => a - b);
+      for (const food of foods) {
+        const price = Number(food.price);
+        const bucket = priceBST.search(price);
+        if (bucket) {
+          bucket.push(food);
+        } else {
+          priceBST.insert(price, [food]);
+        }
+      }
+      // In-order traversal gives products sorted by price (ascending)
+      foods = priceBST.inOrder().flatMap((entry) => entry.value);
+    }
+
+    return foods;
+  }, [store.products, trimmedSearch, sortByPrice]);
 
   // Group foods into sections by category
   const sections = useMemo(() => {
@@ -316,6 +343,21 @@ export function StoreMenuView({
                 Search in {store.store_name}...
               </div>
             </Link>
+
+            {/* DSA: BST price sort toggle */}
+            <button
+              type="button"
+              onClick={() => setSortByPrice(!sortByPrice)}
+              aria-label={sortByPrice ? "Sort by default order" : "Sort by price"}
+              title={sortByPrice ? "Sorted: cheapest first" : "Sort by price"}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 cursor-pointer ${
+                sortByPrice
+                  ? "border-primary bg-primary/10 text-primary shadow-sm"
+                  : "border-border/60 bg-muted/80 text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Bottom Row: Categories selector (no line below search bar; bottom line aligns with tab underline) */}

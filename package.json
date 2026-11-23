@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:report": "node scripts/test-report.mjs",
-    "test:all": "vitest run && playwright test"
+    "test:all": "vitest run && playwright test",
+    "demo:ds": "tsx scripts/data-structures-demo.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

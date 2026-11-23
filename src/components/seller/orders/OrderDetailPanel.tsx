@@ -1,10 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { OrderDetail, OrderStatus } from "@/modules/orders/types";
+import type { OrderDetail } from "@/modules/orders/types";
 import { OrderStatusBadge, PaymentBadge } from "./StatusBadge";
 import { OrderDetailSkeleton } from "./Skeletons";
 import { updateOrderStatusAction } from "@/modules/orders/actions";
+import {
+  getAllowedTransitions,
+  isTerminal,
+  type OrderStatus,
+} from "@/modules/orders/status-machine";
 import {
   Check,
   Clock,
@@ -59,12 +64,12 @@ function TimelineStep({
   step: OrderStatus;
   currentStatus: OrderStatus;
 }) {
-  const isTerminal = currentStatus === "rejected" || currentStatus === "cancelled";
+  const isTerminalStatus = isTerminal(currentStatus);
   const stepIndex = TIMELINE_STEPS.indexOf(step);
   const currentIndex = TIMELINE_STEPS.indexOf(currentStatus);
-  const done = !isTerminal && currentIndex > stepIndex;
-  const active = !isTerminal && currentIndex === stepIndex;
-  const skipped = isTerminal && step !== "pending";
+  const done = !isTerminalStatus && currentIndex > stepIndex;
+  const active = !isTerminalStatus && currentIndex === stepIndex;
+  const skipped = isTerminalStatus && step !== "pending";
 
   const labels: Record<OrderStatus, string> = {
     pending: "Placed",
@@ -111,10 +116,10 @@ function TimelineStep({
 }
 
 function StatusTimeline({ status }: { status: OrderStatus }) {
-  const isTerminal = status === "rejected" || status === "cancelled";
+  const isTerminalStatus = isTerminal(status);
   return (
     <div aria-label="Order status timeline" className="rounded-2xl border border-border/70 bg-card p-4">
-      {isTerminal ? (
+      {isTerminalStatus ? (
         <div
           className={`flex items-center justify-center gap-2 rounded-xl p-3 text-xs font-bold ${
             status === "rejected"
@@ -150,16 +155,8 @@ function StatusTimeline({ status }: { status: OrderStatus }) {
 
 // ─── Action buttons ───────────────────────────────────────────────────────────
 
-type NextStatus = "accepted" | "rejected" | "preparing" | "delivering" | "completed" | "cancelled";
-
-const ALLOWED_TRANSITIONS: Partial<Record<OrderStatus, NextStatus[]>> = {
-  pending:    ["accepted", "rejected"],
-  accepted:   ["preparing", "cancelled"],
-  preparing:  ["delivering", "cancelled"],
-  delivering: ["completed", "cancelled"],
-};
-
-const ACTION_LABELS: Record<NextStatus, string> = {
+const ACTION_LABELS: Record<OrderStatus, string> = {
+  pending:   "Pending",
   accepted:   "Accept Order",
   rejected:   "Reject Order",
   preparing:  "Mark Preparing",
@@ -177,7 +174,7 @@ function ActionButtons({ order, onStatusUpdated }: ActionButtonsProps) {
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  const allowedNext = ALLOWED_TRANSITIONS[order.order_status as OrderStatus] ?? [];
+  const allowedNext = getAllowedTransitions(order.order_status);
 
   // MockPay: block 'accept' until the customer has paid
   const mockpayNotPaid =
@@ -188,7 +185,7 @@ function ActionButtons({ order, onStatusUpdated }: ActionButtonsProps) {
 
   if (filteredAllowed.length === 0) return null;
 
-  function handleAction(newStatus: NextStatus) {
+  function handleAction(newStatus: OrderStatus) {
     startTransition(async () => {
       const fd = new FormData();
       fd.append("order_id", order.id);

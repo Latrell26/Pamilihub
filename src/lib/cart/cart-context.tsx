@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useCallback, useState, useEffect } from "react";
+import { createContext, useContext, useCallback, useState, useEffect, useRef } from "react";
+import { Stack } from "@/lib/data-structures/stack";
 
 export type CartItem = {
   productId: string;
@@ -19,6 +20,8 @@ type CartContextType = {
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clear: () => void;
+  undoRemove: () => void;
+  canUndo: boolean;
   itemCount: number;
   subtotal: number;
   isLoaded: boolean;
@@ -60,6 +63,11 @@ export function CartProvider({
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // ── DSA: Stack for undo — when a customer removes an item, it's pushed onto
+  // the stack so they can undo the removal (LIFO: last removed = first restored). ──
+  const undoStackRef = useRef(new Stack<CartItem>());
+  const [canUndo, setCanUndo] = useState(false);
+
   // Reload cart whenever the signed-in user changes
   useEffect(() => {
     setItems(loadCart(userId));
@@ -98,7 +106,33 @@ export function CartProvider({
   );
 
   const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
+    setItems((prev) => {
+      // DSA: Stack — push removed item for undo (LIFO)
+      const removed = prev.find((i) => i.productId === productId);
+      if (removed) {
+        undoStackRef.current.push({ ...removed });
+        setCanUndo(true);
+      }
+      return prev.filter((i) => i.productId !== productId);
+    });
+  }, []);
+
+  /** DSA: Stack — pop the last removed item and restore it to the cart. */
+  const undoRemove = useCallback(() => {
+    if (undoStackRef.current.isEmpty) return;
+    const restored = undoStackRef.current.pop();
+    setItems((prev) => {
+      const existing = prev.find((i) => i.productId === restored.productId);
+      if (existing) {
+        return prev.map((i) =>
+          i.productId === restored.productId
+            ? { ...i, quantity: i.quantity + restored.quantity }
+            : i
+        );
+      }
+      return [...prev, restored];
+    });
+    setCanUndo(!undoStackRef.current.isEmpty);
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
@@ -116,6 +150,8 @@ export function CartProvider({
 
   const clear = useCallback(() => {
     setItems([]);
+    undoStackRef.current.clear();
+    setCanUndo(false);
   }, []);
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -126,7 +162,7 @@ export function CartProvider({
   }
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear, itemCount, subtotal, isLoaded }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear, undoRemove, canUndo, itemCount, subtotal, isLoaded }}>
       {children}
     </CartContext.Provider>
   );
