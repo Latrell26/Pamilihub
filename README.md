@@ -28,7 +28,7 @@ Developed as a Platform Technologies final project by a 3-person team.
 | **Database & Auth** | Supabase (PostgreSQL, Row-Level Security, GoTrue Auth) |
 | **File Storage** | Supabase Storage (Seller-scoped product image uploads) |
 | **Schema Validation** | Zod (End-to-end form and API validation) |
-| **API Testing** | Postman (Simulated payment integration collection) |
+| **Testing** | Vitest + Playwright (Unit, component, and E2E testing) |
 | **Deployment** | Vercel |
 
 ---
@@ -111,31 +111,15 @@ This project uses three testing layers to verify functionality, security, and pl
   - `responsive.spec.ts` — desktop + mobile width rendering
 - **Command:** `pnpm test:e2e` — generates Playwright HTML report in `playwright-report/`
 
-### Postman Collection (`postman/pamilihub_mockpay.postman_collection.json`)
-- **8 automated API tests** for the MockPay simulated payment endpoint:
-  1. Missing Authorization → 401 Unauthorized
-  2. Non-Customer Role → 403 Forbidden
-  3. Non-Existent Order ID → 404 Not Found
-  4. Mismatched Payment Amount → 400 Bad Request
-  5. Valid Payment Approval → 200 OK (Paid)
-  6. Valid Payment Cancellation → 200 OK (Stock Restored)
-  7. COD Order → MockPay → 400 Bad Request (non-MockPay guard)
-  8. Cancelled/Rejected Order → 400 Bad Request (terminal-order guard)
-- **Pre-request script** auto-fetches customer/seller JWTs from Supabase Auth — no manual token replacement needed.
-- **Environment:** `postman/pamilihub.postman_environment.json` with test accounts (`ana@pamilihub.test`, `maria@pamilihub.test`)
-- **Instructions:** See [`docs/POSTMAN.md`](docs/POSTMAN.md) — import both files, ensure environment is selected, click Run.
-- **Variable setup:** Fill `{{approveOrderId}}`, `{{cancelOrderId}}`, `{{codOrderId}}`, `{{cancelledOrderId}}` from demo DB or create orders via the UI first.
-
 ### Testing Evidence for Rubric Criterion 4
 
 | Artifact | Location | What it proves |
 |---|---|---|
 | Unit + component test results | `vitest/` HTML report | 65+ schema and logic tests pass |
 | E2E test results | `playwright-report/` HTML report | 134 end-to-end journey tests pass |
-| Postman run results | `postman/` — export from Run dropdown | 8 MockPay API tests pass (tokens auto-filled) |
-| Test case status matrix | `docs/test-cases.md` | PASS/PENDING status for all 73 test cases |
-| Security-controls mapping | `docs/TECHNICAL.md` § "Security Controls Verification" | Each Postman 401/403/404/400 mapped to RLS + app-layer guard |
-| README Testing section | This section | Links to all three test layers and evidence locations |
+| Test case status matrix | `docs/test-cases.md` | PASS/PENDING status for test cases |
+| Security-controls mapping | `docs/TECHNICAL.md` § "Security Controls Verification" | Route and RLS access control mapping |
+| README Testing section | This section | Links to testing layers and evidence locations |
 
 ---
 
@@ -147,4 +131,3 @@ This project uses three testing layers to verify functionality, security, and pl
 - [`docs/TECHNICAL.md`](docs/TECHNICAL.md) — In-depth technical architecture and atomic transactions.
 - [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) — User manual for Customers, Merchants, and Admins.
 - [`docs/EVALUATION.md`](docs/EVALUATION.md) — ISO/IEC 25010 software quality evaluation survey and results.
-- [`docs/POSTMAN.md`](docs/POSTMAN.md) — Postman collection import, variable setup, and test run instructions.

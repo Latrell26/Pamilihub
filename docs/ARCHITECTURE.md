@@ -23,7 +23,7 @@ Modules communicate through server actions and a REST-style API route with JSON 
 | Validation | Zod, in server actions and API routes |
 | Payments (demo) | In-app MockPay, REST-style API route, JSON |
 | Hosting | Vercel (fallback: local demo) |
-| Testing | Test cases + Postman |
+| Testing | Test cases |
 
 ## Proposed folder layout *(⚠ CONFIRM WITH GROUP; adjust if the team prefers another structure)*
 ```
