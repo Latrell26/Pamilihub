@@ -46,16 +46,16 @@ banner(
 console.log("Feature Context: Accumulating scored product & store predictions in the search API.");
 const results = new ArrayList<{ id: string; name: string; score: number }>();
 results.push({ id: "p1", name: "Buko Pie", score: 100 });
-results.push({ id: "p2", name: "Espasol", score: 80 });
-results.push({ id: "p3", name: "Kakanin", score: 60 });
+results.push({ id: "p2", name: "Biko", score: 80 });
+results.push({ id: "p3", name: "Suman", score: 60 });
 
 console.log("Results after push:");
 for (const r of results.toArray()) {
   console.log(`  Score ${r.score} — ${r.name} (id: ${r.id})`);
 }
 
-results.insert(1, { id: "p15", name: "Ube Jam", score: 90 });
-console.log("\nAfter inserting 'Ube Jam' at index 1:");
+results.insert(1, { id: "p4", name: "Egg Pie", score: 90 });
+console.log("\nAfter inserting 'Egg Pie' at index 1:");
 console.log(`  List Size: ${results.size}`);
 for (const r of results.toArray()) {
   console.log(`  Score ${r.score} — ${r.name}`);
@@ -134,8 +134,8 @@ banner(
 console.log("Feature Context: Pushing removed cart items onto stack to power the 'Undo' button.");
 const undo = new Stack<{ action: string; productId: string; name: string }>();
 undo.push({ action: "remove", productId: "p1", name: "Buko Pie" });
-undo.push({ action: "remove", productId: "p2", name: "Espasol" });
-undo.push({ action: "remove", productId: "p3", name: "Ube Halaya" });
+undo.push({ action: "remove", productId: "p2", name: "Egg Pie" });
+undo.push({ action: "remove", productId: "p3", name: "Biko" });
 
 console.log("Undo Stack (top = most recently deleted item):");
 for (const entry of undo.toArray()) {
@@ -184,18 +184,18 @@ banner(
 
 console.log("Feature Context: Sorting store menu foods by price via in-order traversal when user toggles sort.");
 const priceBST = new BinarySearchTree<number, string>((a, b) => a - b);
-priceBST.insert(150, "Buko Pie");
-priceBST.insert(50, "Espasol");
-priceBST.insert(220, "Cassava Cake Special");
-priceBST.insert(35, "Suman Malagkit");
-priceBST.insert(120, "Ube Halaya Jar");
+priceBST.insert(350, "Buko Pie");
+priceBST.insert(250, "Egg Pie");
+priceBST.insert(120, "Biko");
+priceBST.insert(80, "Suman");
+priceBST.insert(200, "Barako Coffee");
 
 console.log("In-Order Traversal (Sorted ascending: cheapest first):");
 for (const { key: price, value: name } of priceBST.inOrder()) {
   console.log(`  ₱${price.toFixed(2)} — ${name}`);
 }
 
-console.log(`\nSearch price ₱50: ${priceBST.search(50)}`);
+console.log(`\nSearch price ₱80: ${priceBST.search(80)}`);
 console.log(`Search price ₱999: ${priceBST.search(999) ?? "Not found"}`);
 console.log(`Cheapest item key: ₱${priceBST.minKey()}`);
 console.log(`Priciest item key: ₱${priceBST.maxKey()}`);
@@ -214,9 +214,9 @@ banner(
 console.log("Feature Context: Instant O(m) prefix lookups to boost relevance score for partial search queries.");
 const searchTrie = new Trie();
 searchTrie.insert("buko pie");
-searchTrie.insert("buko pandan");
-searchTrie.insert("espasol");
-searchTrie.insert("kakanin");
+searchTrie.insert("egg pie");
+searchTrie.insert("biko");
+searchTrie.insert("suman");
 searchTrie.insert("barako coffee");
 
 console.log("Indexed Delicacies in Trie:");
@@ -225,7 +225,7 @@ for (const word of searchTrie.words()) {
 }
 
 console.log(`\nUser types 'buk' -> startsWith('buk'): ${searchTrie.startsWith("buk")} (Awards +10 score bonus)`);
-console.log(`User types 'esp' -> startsWith('esp'): ${searchTrie.startsWith("esp")} (Awards +10 score bonus)`);
+console.log(`User types 'bar' -> startsWith('bar'): ${searchTrie.startsWith("bar")} (Awards +10 score bonus)`);
 console.log(`User types 'xyz' -> startsWith('xyz'): ${searchTrie.startsWith("xyz")} (No bonus)`);
 
 console.log("\nAutocomplete matches for prefix 'buk':");
@@ -278,13 +278,13 @@ banner(
 );
 
 console.log("Feature Context: Merge Sort ranks search predictions; Binary Search detects exact title matches in O(log n).");
-const productTitles = ["Kakanin", "Buko Pie", "Espasol", "Barako Coffee", "Ube Jam"];
+const productTitles = ["Suman", "Buko Pie", "Barako Coffee", "Egg Pie", "Biko"];
 console.log("Original titles:        ", productTitles.join(", "));
 
 mergeSort(productTitles, (a, b) => a.localeCompare(b));
 console.log("Sorted with Merge Sort: ", productTitles.join(", "));
 
-const query = "Espasol";
+const query = "Buko Pie";
 const foundIdx = binarySearch(productTitles, query, (a, b) => a.localeCompare(b));
 console.log(`Binary Search for exact query "${query}": Found at index ${foundIdx} (Awards +15 exact match bonus)`);
 

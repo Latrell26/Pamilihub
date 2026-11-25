@@ -278,6 +278,44 @@ function Thumb({ item }: { item: CartLine }) {
   );
 }
 
+function UndoBanner({
+  name,
+  onUndo,
+  onDismiss,
+}: {
+  name: string | null;
+  onUndo: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-foreground shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="truncate">
+          Removed <strong className="text-foreground">{name ? `"${name}"` : "item"}</strong> from cart
+        </span>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onUndo}
+          className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-sm transition active:scale-95 hover:bg-primary/90"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Undo
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss undo"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition active:scale-90"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CartContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -285,7 +323,7 @@ function CartContent() {
   const isReorder = searchParams.get("reorder") === "1" || searchParams.has("reorder");
   const isMerge = searchParams.get("merge") === "1";
 
-  const { items, itemCount, addItem, removeItem, updateQuantity, isLoaded, canUndo, undoRemove } = useCart();
+  const { items, itemCount, addItem, removeItem, updateQuantity, isLoaded, canUndo, undoRemove, dismissUndo, lastRemovedName } = useCart();
 
   // ALL hooks must be declared before any conditional return ↓
 
@@ -471,17 +509,11 @@ function CartContent() {
 
         {/* DSA: Stack Undo Banner — pops and restores last removed item */}
         {canUndo && (
-          <div className="flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-foreground shadow-sm">
-            <span className="font-semibold">Item removed from cart</span>
-            <button
-              type="button"
-              onClick={undoRemove}
-              className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-sm transition active:scale-95 hover:bg-primary/90"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Undo
-            </button>
-          </div>
+          <UndoBanner
+            name={lastRemovedName}
+            onUndo={undoRemove}
+            onDismiss={dismissUndo}
+          />
         )}
 
         <section className="overflow-hidden rounded-[2rem] border border-border/60 bg-card shadow-sm">
@@ -617,17 +649,11 @@ function CartContent() {
 
       {/* DSA: Stack Undo Banner — pops and restores last removed item */}
       {canUndo && (
-        <div className="flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-foreground shadow-sm">
-          <span className="font-semibold">Item removed from cart</span>
-          <button
-            type="button"
-            onClick={undoRemove}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-sm transition active:scale-95 hover:bg-primary/90"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Undo
-          </button>
-        </div>
+        <UndoBanner
+          name={lastRemovedName}
+          onUndo={undoRemove}
+          onDismiss={dismissUndo}
+        />
       )}
 
       {/* Click-away layer for the ••• menu */}

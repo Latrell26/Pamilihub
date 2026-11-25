@@ -348,15 +348,16 @@ export function StoreMenuView({
             <button
               type="button"
               onClick={() => setSortByPrice(!sortByPrice)}
-              aria-label={sortByPrice ? "Sort by default order" : "Sort by price"}
+              aria-label={sortByPrice ? "Sort by default order" : "Sort by price (cheapest first)"}
               title={sortByPrice ? "Sorted: cheapest first" : "Sort by price"}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90 cursor-pointer ${
+              className={`flex h-11 items-center gap-1.5 px-3.5 rounded-full border text-xs font-extrabold transition-all active:scale-95 cursor-pointer shrink-0 ${
                 sortByPrice
-                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                  : "border-border/60 bg-muted/80 text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/25"
+                  : "border-border/60 bg-muted/80 text-foreground hover:bg-muted"
               }`}
             >
-              <ArrowUpDown className="h-4 w-4" />
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              <span>{sortByPrice ? "Cheapest First" : "Sort Price"}</span>
             </button>
           </div>
 

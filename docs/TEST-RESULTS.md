@@ -12,6 +12,16 @@ Generated: 2026-11-17 17:24:47
 
 | Layer | Files | What it proves |
 |---|---|---|
+| Unit (DSA) | `tests/unit/data-structures/array-list.test.ts` | Dynamic array push, insert, remove, resize, iteration |
+| Unit (DSA) | `tests/unit/data-structures/linked-list.test.ts` | Singly linked list append, prepend, insert, remove, retrieval |
+| Unit (DSA) | `tests/unit/data-structures/hash-set.test.ts` | Hash set add, delete, separate chaining, rehash, set operations |
+| Unit (DSA) | `tests/unit/data-structures/stack.test.ts` | Stack LIFO push, pop, peek, empty handling (Cart Undo) |
+| Unit (DSA) | `tests/unit/data-structures/queue.test.ts` | Queue FIFO enqueue, dequeue, peek, empty handling (Order Queue) |
+| Unit (DSA) | `tests/unit/data-structures/binary-search-tree.test.ts` | BST insert, search, delete, in-order traversal, min/max keys (Price Sort) |
+| Unit (DSA) | `tests/unit/data-structures/trie.test.ts` | Trie insert, search, startsWith, word collection (Prefix Search) |
+| Unit (DSA) | `tests/unit/data-structures/graph.test.ts` | Directed graph vertices, edges, BFS, DFS, path existence, shortest path |
+| Unit (DSA) | `tests/unit/data-structures/algorithms.test.ts` | Merge sort stability and O(n log n) sorting; Binary search O(log n) lookups |
+| Unit (DSA) | `tests/unit/data-structures/status-machine.test.ts` | Order status graph transitions, terminal state enforcement |
 | Unit | `tests/unit/orders/schemas.test.ts` | Zod schemas validate checkout, MockPay, order status, and reject bad input |
 | Unit | `tests/unit/accounts/schemas.test.ts` | Registration, login, profile, seller-application validation |
 | Unit | `tests/unit/catalog/schemas.test.ts` | Category and product CRUD validation |
