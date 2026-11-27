@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { createPaymentProcessor } from "@/lib/oop";
 
 /** MockPay payment request validation. */
 const mockpaySchema = z.object({
@@ -131,7 +132,9 @@ export async function POST(req: Request) {
     );
   }
 
-  if (Number(order.total) !== amount) {
+  const processor = createPaymentProcessor("mockpay", order_id, amount);
+
+  if (!processor.validateAmount(Number(order.total))) {
     return new Response(JSON.stringify({ error: "Amount does not match order total" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -152,11 +155,11 @@ export async function POST(req: Request) {
     });
   }
 
-  const payment_status = result === "approve" ? "paid" : "cancelled";
-  const message =
-    result === "approve"
-      ? "Payment approved (simulated)."
-      : "Payment cancelled. Stock has been restored.";
+  const outcome = processor.process(result);
 
-  return Response.json({ order_id, payment_status, message });
+  return Response.json({
+    order_id: outcome.orderId,
+    payment_status: outcome.paymentStatus,
+    message: outcome.message,
+  });
 }

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { createAccountEntity, type UserAccount } from "@/lib/oop";
 
 export type AppUser = {
   id: string;
@@ -73,7 +74,12 @@ export async function requireUser() {
  */
 export async function requireRole(...allowedRoles: AppUser["role"][]) {
   const user = await requireUser();
-  if (!allowedRoles.includes(user.role)) {
+  const account = createAccountEntity({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  });
+  if (!allowedRoles.includes(account.getRole())) {
     redirect("/unauthorized");
   }
   return user;
@@ -84,4 +90,19 @@ export async function requireRole(...allowedRoles: AppUser["role"][]) {
  */
 export async function requireAdmin() {
   return requireRole("admin");
+}
+
+/**
+ * Returns the current authenticated user wrapped in a polymorphic `UserAccount`
+ * subclass (`CustomerAccount`, `SellerAccount`, or `AdminAccount`), or null.
+ */
+export async function getCurrentAccount(): Promise<UserAccount | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  return createAccountEntity({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  });
 }

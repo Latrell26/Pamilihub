@@ -8,8 +8,9 @@ import { checkoutAction } from "@/modules/orders/actions";
 import { AddressPicker } from "@/components/ui/address-picker";
 import { Banknote, CreditCard, MapPin, ArrowLeft } from "lucide-react";
 import CheckoutLoading from "./loading";
+import { CheckoutPlanner, FLAT_DELIVERY_FEE } from "@/lib/oop";
 
-const DELIVERY_FEE = 50;
+const DELIVERY_FEE = FLAT_DELIVERY_FEE;
 
 const inputClass = (hasError: boolean) =>
   `h-12 w-full rounded-2xl border bg-background px-4 text-sm placeholder:text-muted-foreground transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary ${
@@ -90,22 +91,26 @@ function CheckoutContent() {
     ? items.filter((i) => i.sellerId === storeParam)
     : items;
 
-  // Group items by seller for per-seller delivery fee
-  const itemsBySeller = new Map<string, { name: string; items: typeof checkoutItems }>();
-  for (const item of checkoutItems) {
-    if (!itemsBySeller.has(item.sellerId)) {
-      itemsBySeller.set(item.sellerId, { name: item.sellerName, items: [] });
-    }
-    itemsBySeller.get(item.sellerId)!.items.push(item);
-  }
+  // Group items by seller using OOP CheckoutPlanner (one Order per seller + flat delivery fee)
+  const plannedOrders =
+    checkoutItems.length > 0
+      ? CheckoutPlanner.splitBySeller(
+          "checkout-preview",
+          checkoutItems.map((i) => ({
+            productId: i.productId,
+            productName: i.name,
+            sellerId: i.sellerId,
+            quantity: i.quantity,
+            unitPrice: i.price,
+          })),
+          paymentMethod
+        )
+      : [];
 
-  const subtotal = checkoutItems.reduce(
-    (sum, i) => sum + i.price * i.quantity,
-    0
-  );
-  const storeCount = itemsBySeller.size;
-  const deliveryFee = DELIVERY_FEE * storeCount;
-  const grandTotal = subtotal + deliveryFee;
+  const subtotal = plannedOrders.reduce((sum, o) => sum + o.calculateSubtotal(), 0);
+  const storeCount = plannedOrders.length;
+  const deliveryFee = plannedOrders.reduce((sum, o) => sum + o.getDeliveryFee(), 0);
+  const grandTotal = plannedOrders.reduce((sum, o) => sum + o.calculateTotal(), 0);
 
   const targetSellerName =
     (storeParam || isReorder) && checkoutItems.length > 0

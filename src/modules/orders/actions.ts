@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkoutSchema, type CheckoutInput, cartItemSchema } from "./schemas";
 import { orderStatusUpdateSchema, type OrderStatusUpdateInput } from "./schemas";
+import { Order, createPaymentProcessor, type PaymentMethod, type PaymentStatus } from "@/lib/oop";
+import type { OrderStatus } from "./status-machine";
 
 type ActionState = {
   success: boolean;
@@ -180,6 +182,42 @@ export async function updateOrderStatusAction(
   }
 
   const { order_id, new_status } = parsed.data;
+
+  // Enforce OOP Order domain rules (status machine + payment-gated accept) before RPC
+  const { data: existingOrder } = await supabase
+    .from("orders")
+    .select("id, customer_id, seller_id, payment_method, payment_status, order_status, delivery_fee, total")
+    .eq("id", order_id)
+    .maybeSingle();
+
+  if (existingOrder && existingOrder.order_status !== new_status) {
+    try {
+      const orderEntity = new Order({
+        id: existingOrder.id,
+        customerId: existingOrder.customer_id,
+        sellerId: existingOrder.seller_id,
+        paymentMethod: existingOrder.payment_method as PaymentMethod,
+        deliveryFee: Number(existingOrder.delivery_fee),
+        paymentStatus: existingOrder.payment_status as PaymentStatus,
+        orderStatus: existingOrder.order_status as OrderStatus,
+      });
+      orderEntity.transitionTo(new_status as OrderStatus);
+
+      if (new_status === "completed" && existingOrder.payment_method === "cod") {
+        const codProcessor = createPaymentProcessor(
+          "cod",
+          existingOrder.id,
+          Number(existingOrder.total)
+        );
+        codProcessor.process("collect_on_delivery");
+      }
+    } catch (domainErr) {
+      return {
+        success: false,
+        message: domainErr instanceof Error ? domainErr.message : "Invalid order transition.",
+      };
+    }
+  }
 
   const { error } = await supabase.rpc("update_order_status", {
     p_order_id: order_id,

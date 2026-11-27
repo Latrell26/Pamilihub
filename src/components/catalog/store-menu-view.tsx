@@ -5,6 +5,7 @@ import Link from "next/link";
 import { StoreDetail } from "@/modules/catalog/queries";
 import { AddToCartButton } from "@/components/ui/add-to-cart-button";
 import { BinarySearchTree } from "@/lib/data-structures/binary-search-tree";
+import { ProductItem, SellerStore } from "@/lib/oop";
 import {
   Store,
   MapPin,
@@ -85,14 +86,43 @@ export function StoreMenuView({
 
   const [sortByPrice, setSortByPrice] = useState(false);
 
+  // OOP Aggregation: SellerStore aggregates ProductItem[] for encapsulated stock/price access
+  const storeEntity = useMemo(
+    () =>
+      new SellerStore({
+        id: store.id,
+        storeName: store.store_name,
+        location: store.location ?? "San Pablo City",
+        status: "approved",
+        products: store.products.map(
+          (p) =>
+            new ProductItem({
+              id: p.id,
+              sellerId: store.id,
+              categoryId: p.category_id,
+              name: p.name,
+              price: Number(p.price),
+              stock: p.stock,
+            })
+        ),
+      }),
+    [store.id, store.store_name, store.location, store.products]
+  );
+
   // Filter foods by name only (R6)
   const trimmedSearch = searchQuery.trim().toLowerCase();
   const filteredFoods = useMemo(() => {
+    const productEntityMap = new Map(
+      storeEntity.getProducts().map((item) => [item.getId(), item])
+    );
     let foods = store.products;
     if (trimmedSearch) {
-      foods = foods.filter((p) =>
-        p.name.toLowerCase().includes(trimmedSearch)
-      );
+      foods = foods.filter((p) => {
+        const entity = productEntityMap.get(p.id);
+        return (entity ? entity.getName() : p.name)
+          .toLowerCase()
+          .includes(trimmedSearch);
+      });
     }
 
     // ── DSA: BinarySearchTree — sort menu items by price when the toggle is active.
@@ -102,7 +132,8 @@ export function StoreMenuView({
       type FoodItem = StoreDetail["products"][number];
       const priceBST = new BinarySearchTree<number, FoodItem[]>((a, b) => a - b);
       for (const food of foods) {
-        const price = Number(food.price);
+        const entity = productEntityMap.get(food.id);
+        const price = entity ? entity.getPrice() : Number(food.price);
         const bucket = priceBST.search(price);
         if (bucket) {
           bucket.push(food);
@@ -115,7 +146,7 @@ export function StoreMenuView({
     }
 
     return foods;
-  }, [store.products, trimmedSearch, sortByPrice]);
+  }, [store.products, storeEntity, trimmedSearch, sortByPrice]);
 
   // Group foods into sections by category
   const sections = useMemo(() => {
